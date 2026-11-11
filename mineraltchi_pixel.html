@@ -1,0 +1,732 @@
+<title>Mineraltchi</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=IBM+Plex+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: Sammlungsvitrine – Kopf mit Geoden-Buehne, darunter Raster aus Karten mit Geraet + Sammlungsetikett */
+:root {
+  --bg: #f1eff6;
+  --surface: #fbfaff;
+  --ink: #231e2e;
+  --muted: #645d73;
+  --line: #dcd5e8;
+  --accent: #6b4fc2;
+  --accent-ink: #ffffff;
+  --label: #fffdf6;
+  --f-display: "DotGothic16", "MS Gothic", ui-monospace, monospace;
+  --f-body: "Zen Kaku Gothic New", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15121c; --surface: #1e1928; --ink: #ece8f4; --muted: #a69db6;
+    --line: #352e44; --accent: #b49dff; --accent-ink: #1a1426; --label: #262033;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15121c; --surface: #1e1928; --ink: #ece8f4; --muted: #a69db6;
+  --line: #352e44; --accent: #b49dff; --accent-ink: #1a1426; --label: #262033;
+  color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
+
+.seite {
+  max-width: 1180px; margin: 0 auto;
+  padding-block: 32px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 36px;
+}
+
+/* Kopf */
+.kopf { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 28px; align-items: center; }
+.kopf h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(2.6rem, 7vw, 4.4rem); line-height: 1; margin: 0 0 14px; letter-spacing: .01em; text-wrap: balance; }
+.kopf .unter { font-size: 1.08rem; max-width: 34em; margin: 0 0 14px; }
+.zyklus { font-family: var(--f-mono); font-size: .8rem; color: var(--muted); margin: 0; letter-spacing: .02em; }
+.zyklus b { color: var(--accent); font-weight: 500; }
+
+.buehne { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.buehne .rahmen { padding: 10px; border-radius: 16px; background: #4a4258; box-shadow: inset 0 3px 6px rgba(0,0,0,.35); }
+.buehne canvas { display: block; border-radius: 8px; image-rendering: pixelated; }
+.buehne p { margin: 0; min-height: 3.1em; max-width: 26em; font-size: .92rem; color: var(--muted); }
+.buehnenknopf { font: 500 .9rem var(--f-body); background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 999px; padding: 8px 20px; cursor: pointer; }
+.buehnenknopf:focus-visible, .chip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.wackelt { animation: wackeln .9s ease-in-out infinite; transform-origin: 50% 90%; }
+.schuettelt { animation: schuetteln .5s ease-in-out 1; }
+@keyframes wackeln { 0%,100% { transform: rotate(0) } 25% { transform: rotate(-5deg) } 75% { transform: rotate(5deg) } }
+@keyframes schuetteln { 0%,100% { transform: translateX(0) rotate(0) } 20% { transform: translateX(-6px) rotate(-6deg) } 40% { transform: translateX(6px) rotate(6deg) } 60% { transform: translateX(-4px) rotate(-3deg) } 80% { transform: translateX(4px) rotate(3deg) } }
+
+/* Raster */
+.raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(262px, 1fr)); gap: 18px; }
+.karte { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px 18px 20px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+/* Geraet: Werte fest, weil die Schale in beiden Themes gleich aussieht */
+.geraet {
+  width: 212px; max-width: 100%; aspect-ratio: 212 / 244; margin-inline: auto;
+  border-radius: 50% 50% 47% 47% / 57% 57% 43% 43%;
+  background:
+    radial-gradient(circle at 30% 22%, rgba(255,255,255,.8), rgba(255,255,255,0) 36%),
+    linear-gradient(160deg, var(--schale1), var(--schale2));
+  box-shadow: inset 0 -10px 20px rgba(0,0,0,.13), inset 0 6px 12px rgba(255,255,255,.55), 0 12px 24px rgba(30,20,50,.18);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding-top: 16px;
+}
+.bildschirm { padding: 7px; border-radius: 14px; background: rgba(35,28,48,.28); box-shadow: inset 0 2px 5px rgba(0,0,0,.3); transition: box-shadow .3s; }
+.bildschirm.uv { box-shadow: inset 0 2px 5px rgba(0,0,0,.3), 0 0 22px 4px rgba(184,255,60,.65); }
+.bildschirm canvas { display: block; border-radius: 6px; image-rendering: pixelated; }
+.knoepfe { display: grid; grid-template-columns: repeat(3, 58px); justify-items: center; }
+.zelle { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.knopf {
+  width: 24px; height: 24px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.55), rgba(255,255,255,0) 58%), #3b3348;
+  box-shadow: 0 2px 0 rgba(0,0,0,.35);
+}
+.knopf:active { transform: translateY(1px); box-shadow: 0 1px 0 rgba(0,0,0,.35); }
+.knopf:focus-visible { outline: 2px solid #231e2e; outline-offset: 2px; }
+.zelle span { font: 500 10.5px/1.1 var(--f-body); color: #2a2433; white-space: nowrap; }
+
+.meldung { margin: 0; min-height: 3.1em; text-align: center; font-size: .86rem; color: var(--muted); }
+.karte h2 { font-family: var(--f-display); font-weight: 400; font-size: 1.6rem; line-height: 1.1; margin: 0; }
+.mineral { margin: -6px 0 0; color: var(--muted); font-size: .9rem; }
+
+.etikett { margin: 0; display: grid; grid-template-columns: 1.5fr 1fr .8fr; gap: 6px 10px; background: var(--label); border: 1px dashed var(--line); border-radius: 6px; padding: 8px 10px; }
+.etikett div { min-width: 0; }
+.etikett dt { font: 500 .62rem var(--f-mono); text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
+.etikett dd { margin: 0; font: 400 .78rem/1.35 var(--f-mono); overflow-wrap: anywhere; }
+
+.texte { display: flex; flex-direction: column; gap: 8px; }
+.texte p { margin: 0; font-size: .9rem; line-height: 1.55; }
+.marke { font-weight: 700; color: var(--accent); margin-right: 4px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 4px; }
+.chip { font: 400 .78rem var(--f-body); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+.fuss { font-size: .84rem; color: var(--muted); max-width: 60em; margin: 0; }
+
+@media (max-width: 720px) {
+  .kopf { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wackelt, .schuettelt { animation: none; }
+}
+</style>
+
+<main class="seite">
+  <header class="kopf">
+    <div>
+      <h1>Mineraltchi</h1>
+      <p class="unter">Acht Kristallwesen zum Großziehen. Jedes schlüpft aus einem Geoden-Ei und wird zu einem Mineral – welches, hängt von der Pflege ab. Die Tasten an den Geräten funktionieren.</p>
+      <p class="zyklus"><b>Geoden-Ei</b> → <b>Druschi</b> (Kristallkeim) → Quarz, Turmalin, Beryll, Wavellit, Autunit, Wulfenit, Sphalerit oder Pyrit</p>
+    </div>
+    <section class="buehne" aria-label="Schlüpfen ausprobieren">
+      <div class="rahmen" id="buehnenRahmen"><canvas id="buehne" aria-label="Pixelbild der Schlüpf-Bühne"></canvas></div>
+      <p id="buehnenText" aria-live="polite"></p>
+      <button class="buehnenknopf" id="buehnenKnopf" type="button"></button>
+    </section>
+  </header>
+
+  <section class="raster" id="raster" aria-label="Die acht Mineraltchi"></section>
+
+  <p class="fuss">Eigene Figuren im Stil virtueller Haustiere. Formeln, Kristallsysteme, Härten und Varietäten sind echte Mineralogie, die Pflegeregeln sind ausgedacht.</p>
+</main>
+
+<script>
+// Gemeinsame Farben fuer Augen, Mund, Glanzpunkt
+const BASIS = { e: '#1d1a26', m: '#1d1a26', h: '#ffffff' };
+const BREITE = 16, HOEHE = 17;
+const STANDARDFUNKEN = [[1, 3], [14, 2], [0, 9], [15, 10], [3, 0], [12, 0]];
+const HERZ = [[12, 0], [14, 0], [11, 1], [12, 1], [13, 1], [14, 1], [15, 1], [12, 2], [13, 2], [14, 2], [13, 3]];
+
+const WESEN = [
+  {
+    id: 'quarz', name: 'Quarzitchi', mineral: 'Quarz', formel: 'SiO₂', system: 'trigonal', mohs: '7',
+    schale: ['#f6f9fd', '#c9d6ea'],
+    basis: { o: '#4a5a78', 1: '#f4f8ff', 2: '#cfe0f5', 3: '#a9bcd8', c: '#ffb3c6' },
+    grid: [
+      '......oooo......',
+      '.....o1h22o.....',
+      '....o11h222o....',
+      '...o111h2222o...',
+      '..o1111h22222o..',
+      '..o1111h22222o..',
+      '..o1111h22222o..',
+      '..o11e1h22e22o..',
+      '..o11e1h22e22o..',
+      '..oc111h2222co..',
+      '..o1111mm2222o..',
+      '..o1111h22222o..',
+      '..o1111h22222o..',
+      '..o3333333333o..',
+      '...oooooooooo...',
+      '....oo....oo....'
+    ],
+    varianten: [
+      { name: 'Bergkristall', pal: {}, notiz: 'Bergkristall: farblos und klar – die Grundform.' },
+      { name: 'Amethyst', pal: { o: '#4a2f6e', 1: '#dcc6ff', 2: '#b38ef0', 3: '#8a62cf' }, notiz: 'Amethyst: Eisenspuren plus natürliche Strahlung färben ihn violett.' },
+      { name: 'Rauchquarz', pal: { o: '#3a2e26', 1: '#cdbba7', 2: '#9c8470', 3: '#6f5a4a' }, notiz: 'Rauchquarz: Strahlung macht ihn rauchig braun.' },
+      { name: 'Citrin', pal: { o: '#7a5212', 1: '#fff1b8', 2: '#f5cf62', 3: '#d9a832' }, notiz: 'Citrin: gelb durch Eisen. Viele Citrine im Handel sind gebrannter Amethyst.' },
+      { name: 'Rosenquarz', pal: { o: '#7a3e52', 1: '#ffe1ea', 2: '#f6b9cb', 3: '#e095ad', c: '#ff7fa4' }, notiz: 'Rosenquarz: zartrosa durch feinste eingelagerte Fasern.' }
+    ],
+    spezial: { label: 'Drücken', typ: 'funken', farbe: '#ffd23a', punkte: [[3, 1], [12, 0], [1, 7], [14, 6], [0, 12], [15, 11]], text: 'Knister! Quarz ist piezoelektrisch: Druck erzeugt elektrische Spannung.' },
+    wesen: 'Ruhig, klar und ein bisschen eitel. Wächst am liebsten langsam in warmem Wasser – so entstehen auch echte Quarzkristalle.',
+    pflege: 'Die Farbe hängt davon ab, was in seinem Wasser gelöst war und wie viel Strahlung es abbekommt.',
+    fehler: 'Zu viel Strahlung, und aus dem Bergkristall wird ein Rauchquarz.'
+  },
+  {
+    id: 'turmalin', name: 'Turmatchi', mineral: 'Turmalin', formel: 'Borsilikat, z. B. Elbait', system: 'trigonal', mohs: '7–7,5',
+    schale: ['#ffd3e2', '#9fdfb2'],
+    basis: { o: '#3b3346', 1: '#ff8fb5', 2: '#6fcf8a', 3: '#3f9a5d', c: '#e0457e' },
+    grid: [
+      '................',
+      '................',
+      '...oooooooooo...',
+      '..o2211111122o..',
+      '..o2111111112o..',
+      '..o2111111112o..',
+      '..o21e1111e12o..',
+      '..o21e1111e12o..',
+      '..o2c111111c2o..',
+      '..o2111mm1112o..',
+      '..o2211111122o..',
+      '..o2222222222o..',
+      '..o3232323232o..',
+      '..o3333333333o..',
+      '...oooooooooo...',
+      '....oo....oo....'
+    ],
+    varianten: [
+      { name: 'Wassermelone', pal: {}, notiz: 'Wassermelone: innen rosa, außen grün – zwei Wachstumsphasen mit unterschiedlicher Chemie.' },
+      { name: 'Rubellit', pal: { 1: '#ff7aa8', 2: '#f05a8e', 3: '#c2366a', c: '#ffd0e0' }, notiz: 'Rubellit: durch und durch rot-rosa.' },
+      { name: 'Indigolith', pal: { 1: '#9cc0ff', 2: '#4f7fe0', 3: '#2f56a8', c: '#ffb3c6' }, notiz: 'Indigolith: der blaue Turmalin.' },
+      { name: 'Schörl', pal: { o: '#111018', 1: '#4a4656', 2: '#2c2935', 3: '#1c1a22', e: '#f2f0f6', m: '#f2f0f6', c: '#8a5a6e' }, notiz: 'Schörl: der schwarze und häufigste Turmalin. Hier die Laune nach zu wenig Abstauben.' }
+    ],
+    spezial: { label: 'Aufwärmen', typ: 'funken', farbe: '#ffd84a', punkte: [[4, 0], [8, 0], [11, 0], [1, 3], [14, 2], [0, 8], [15, 7]], text: 'Warm geworden und elektrisch geladen (Pyroelektrizität). Jetzt bleibt der Staub an ihm kleben.' },
+    wesen: 'Zweifarbig wie eine Wassermelone. Hat einen dreieckigen Querschnitt und feine Längsrillen an den Seiten.',
+    pflege: 'Nach jedem Aufwärmen abstauben, sonst zieht es Staub und Fussel an.',
+    fehler: 'Zu selten abgestaubt, wird es zum mürrischen schwarzen Schörl.'
+  },
+  {
+    id: 'beryll', name: 'Berytchi', mineral: 'Beryll', formel: 'Be₃Al₂Si₆O₁₈', system: 'hexagonal', mohs: '7,5–8',
+    schale: ['#c2f2d6', '#5ccc92'],
+    basis: { o: '#14492f', 1: '#9ff0c0', 2: '#3fcf7f', 3: '#22a862', 4: '#137a45', c: '#ffb3c6' },
+    grid: [
+      '................',
+      '....oooooooo....',
+      '...o11111111o...',
+      '..o1111111111o..',
+      '..o2223333444o..',
+      '..o2223333444o..',
+      '..o22e3333e44o..',
+      '..o22e3333e44o..',
+      '..o2c233334c4o..',
+      '..o2223mm3444o..',
+      '..o2223333444o..',
+      '..o2223333444o..',
+      '..o2223333444o..',
+      '...o22333344o...',
+      '....oooooooo....',
+      '....oo....oo....'
+    ],
+    varianten: [
+      { name: 'Smaragd', pal: {}, notiz: 'Smaragd: grün durch Chrom oder Vanadium.' },
+      { name: 'Aquamarin', pal: { o: '#1d4a66', 1: '#d6f6ff', 2: '#8fdcf2', 3: '#5ec3e3', 4: '#3a96bd' }, notiz: 'Aquamarin: meerblau durch Eisen.' },
+      { name: 'Morganit', pal: { o: '#6a3445', 1: '#ffe3ea', 2: '#f7b8c8', 3: '#ee9bb2', 4: '#c97790', c: '#ff7fa4' }, notiz: 'Morganit: pfirsichrosa durch Mangan.' },
+      { name: 'Heliodor', pal: { o: '#6a4e0c', 1: '#fff3b0', 2: '#f6d860', 3: '#e8bf33', 4: '#b8901a' }, notiz: 'Heliodor: goldgelb durch dreiwertiges Eisen.' },
+      { name: 'Goshenit', pal: { o: '#5a6470', 1: '#ffffff', 2: '#eef2f6', 3: '#dde4ec', 4: '#c4cfdb' }, notiz: 'Goshenit: farblos, ganz ohne färbende Spuren.' }
+    ],
+    spezial: { label: 'Glänzen', typ: 'funken', farbe: '#ffffff', punkte: [[1, 2], [14, 3], [0, 10], [15, 12], [7, 0]], text: 'Glasglanz! Mit Mohs 7,5–8 ist Beryll sogar härter als Quarz.' },
+    wesen: 'Eine Familie mit vielen Gesichtern: Dieselbe sechseckige Säule wird je nach Spurenelement grün, blau, rosa, gelb oder farblos.',
+    pflege: 'Das Futter bestimmt die Farbe: Chrom, Eisen oder Mangan. Mit der Variante-Taste ausprobieren.',
+    fehler: 'Smaragde haben oft Einschlüsse, im Fachjargon „Jardin“ (Garten). Das ist kein Fehler, sondern Charakter.'
+  },
+  {
+    id: 'wavellit', name: 'Wavelitchi', mineral: 'Wavellit', formel: 'Al₃(PO₄)₂(OH,F)₃ · 5H₂O', system: 'orthorhombisch', mohs: '3,5–4',
+    schale: ['#e6f6cc', '#a6d877'],
+    basis: { o: '#2f5a36', 1: '#a6e07a', 2: '#6fbf4a', s: '#cdee86', c: '#ffb0a8' },
+    grid: [
+      '................',
+      '..s....ss....s..',
+      '...s.oooooo.s...',
+      '....o111111o....',
+      '...o12111121o...',
+      '..o1121111211o..',
+      's.o11e2112e11o.s',
+      '.so11e1111e11os.',
+      '..oc12111121co..',
+      's.o1121mm1211o.s',
+      '..o1211111121o..',
+      '...o12111121o...',
+      '....o111111o....',
+      '...s.oooooo.s...',
+      '.....oo..oo.....',
+      '................'
+    ],
+    varianten: [
+      { name: 'Grün', pal: {}, notiz: 'Grün: die typische Farbe der Wavellit-Sonnen.' },
+      { name: 'Gelbgrün', pal: { o: '#5a5a1f', 1: '#e5ec8a', 2: '#c3cf4f', s: '#eef39f' }, notiz: 'Gelbgrün: ebenfalls häufig.' },
+      { name: 'Weiß', pal: { o: '#5a6470', 1: '#f6f8f2', 2: '#d6ddd0', s: '#e8ece4' }, notiz: 'Weiß: farblose Rosetten.' }
+    ],
+    spezial: { label: 'Nadeln', typ: 'puschel', text: 'Nadeln auf! So strahlig sieht Wavellit aus, wenn man eine Kugel aufbricht.', textAus: 'Nadeln angelegt – jetzt ist es eine glatte Kugel.' },
+    wesen: 'Ein runder Puschel aus strahligen Nadeln. Sitzt am liebsten flach auf Kluftflächen im Gestein und bildet dort grüne „Sonnen“.',
+    pflege: 'Mag Gesellschaft: Wavellit wächst fast nie allein, sondern in ganzen Grüppchen.',
+    fehler: 'Weich und spröde – bitte nicht fallen lassen.'
+  },
+  {
+    id: 'autunit', name: 'Autunitchi', mineral: 'Autunit', formel: 'Ca(UO₂)₂(PO₄)₂ · 10–12H₂O', system: 'tetragonal', mohs: '2–2,5',
+    schale: ['#f4f6a6', '#cddd58'],
+    basis: { o: '#6b6a1f', 1: '#e8ef5a', 2: '#c4d23a', c: '#ffb36b' },
+    uvPal: { o: '#2a5a10', 1: '#c8ff3a', 2: '#8aff2a', c: '#e6ff9a', e: '#0b1a05', m: '#0b1a05' },
+    grid: [
+      '................',
+      '.....oooooo.....',
+      '.....o2222o.....',
+      '...oooooooooo...',
+      '...o11111111o...',
+      '...o11111111o...',
+      '...o1e1111e1o...',
+      '...o1e1111e1o...',
+      '...oc111111co...',
+      '...o111mm111o...',
+      '...o11111111o...',
+      '...o22222222o...',
+      '...o11111111o...',
+      '...oooooooooo...',
+      '....oo....oo....',
+      '................'
+    ],
+    varianten: [
+      { name: 'Autunit', pal: {}, notiz: 'Autunit: frisch und mit vollem Kristallwasser.' },
+      { name: 'Meta-Autunit', pal: { o: '#7a765a', 1: '#e6e5c2', 2: '#cfcd9c', c: '#e8c7a8' }, notiz: 'Meta-Autunit: ausgetrocknet und blass. Hat das Trinken vergessen.' }
+    ],
+    spezial: { label: 'UV-Lampe', typ: 'uv', text: 'Unter UV-Licht leuchtet Autunit grell gelbgrün.', textAus: 'Lampe aus.' },
+    wesen: 'Quadratische, gelbgrüne Täfelchen, gestapelt wie ein kleines Hütchen. Leuchtet im Dunkeln unter der UV-Lampe.',
+    pflege: 'Regelmäßig trinken lassen! Das echte Mineral ist außerdem radioaktiv – Autunitchi trägt man besser nicht in der Hosentasche.',
+    fehler: 'Ohne Wasser verliert es Kristallwasser und wird zum blassen Meta-Autunit. Das passiert auch bei echten Stufen.'
+  },
+  {
+    id: 'wulfenit', name: 'Wulfitchi', mineral: 'Wulfenit', formel: 'PbMoO₄', system: 'tetragonal', mohs: '3',
+    schale: ['#ffd8ad', '#ff9a4a'],
+    basis: { o: '#6a2a10', 1: '#ffa040', 2: '#e06a1c', 3: '#ffcf9a', c: '#ff5a4a' },
+    grid: [
+      '................',
+      '................',
+      '..oo........oo..',
+      '..o3o......o3o..',
+      '.oooooooooooooo.',
+      '.o111111111112o.',
+      '.o111111111112o.',
+      '.o111e1111e112o.',
+      '.o111e1111e112o.',
+      '.o11c111111c12o.',
+      '.o11111mm11112o.',
+      '.o222222222222o.',
+      '.oooooooooooooo.',
+      '...oo......oo...',
+      '................',
+      '................'
+    ],
+    varianten: [
+      { name: 'Orange', pal: {}, notiz: 'Orange: der Klassiker.' },
+      { name: 'Honiggelb', pal: { o: '#6a4a10', 1: '#ffd55a', 2: '#e5aa22', 3: '#fff0b8' }, notiz: 'Honiggelb: typisch für Bleiberg in Kärnten, wo Wulfen das Mineral beschrieben hat.' },
+      { name: 'Rot', pal: { o: '#5a1208', 1: '#ff6a3a', 2: '#d93a1a', 3: '#ffb09a' }, notiz: 'Rot: berühmt aus der Red Cloud Mine in Arizona.' }
+    ],
+    spezial: { label: 'Schütteln', typ: 'wackeln', text: 'Vorsicht! Wulfenit-Täfelchen sind hauchdünn und brechen leicht.' },
+    wesen: 'Ein hauchdünnes, quadratisches Täfelchen. Heißt nach dem Naturforscher Franz Xaver von Wulfen, sieht aber trotzdem aus wie ein kleiner Wolf.',
+    pflege: 'Immer flach tragen und nie stapeln.',
+    fehler: 'Einmal zu wild geschüttelt, hat es eine abgebrochene Ecke – für immer.'
+  },
+  {
+    id: 'sphalerit', name: 'Sphalitchi', mineral: 'Sphalerit (Zinkblende)', formel: 'ZnS', system: 'kubisch', mohs: '3,5–4',
+    schale: ['#f2cc9a', '#b6743a'],
+    basis: { o: '#3a1f0f', 1: '#d98a3a', 2: '#9c5a22', c: '#ff7a5a' },
+    grid: [
+      '.......oo.......',
+      '......o12o......',
+      '.....o1122o.....',
+      '.....o1122o.....',
+      '....o111222o....',
+      '....o111222o....',
+      '...o11112222o...',
+      '...o1e1122e2o...',
+      '..o11e1122e22o..',
+      '..oc11112222co..',
+      '.o11111mm22222o.',
+      '.o111111222222o.',
+      'o11111112222222o',
+      'oooooooooooooooo',
+      '...oo......oo...',
+      '................'
+    ],
+    varianten: [
+      { name: 'Zinkblende', pal: {}, notiz: 'Zinkblende: harzig-braun, der Normalfall.' },
+      { name: 'Rubinblende', pal: { o: '#4a0f0a', 1: '#ff6a4a', 2: '#c22a1a', c: '#ffc0a8' }, notiz: 'Rubinblende: rot und durchscheinend, sehr begehrt.' },
+      { name: 'Marmatit', pal: { o: '#000000', 1: '#4a4048', 2: '#2a2428', e: '#f2f0f6', m: '#f2f0f6', c: '#8a5a5a' }, notiz: 'Marmatit: eisenreich und fast schwarz.' }
+    ],
+    spezial: { label: 'Reiben', typ: 'funken', farbe: '#ff9a3a', punkte: [[3, 3], [12, 2], [1, 8], [14, 7], [2, 0], [13, 0]], text: 'Manche Sphalerite leuchten beim Reiben orange auf (Tribolumineszenz).' },
+    wesen: 'Ein Schelm. „Sphaleros“ heißt auf Griechisch trügerisch: Bergleute hielten es für Bleierz und bekamen kein Blei – daher auch der Name „Blende“.',
+    pflege: 'Spielt gern Verstecken und schummelt beim Raten.',
+    fehler: 'Zu viel Eisen im Futter, und es wird zum dunklen Marmatit.'
+  },
+  {
+    id: 'pyrit', name: 'Pyritchi', mineral: 'Pyrit', formel: 'FeS₂', system: 'kubisch', mohs: '6–6,5',
+    schale: ['#fff2b8', '#e2bc4c'],
+    basis: { o: '#5a4410', 1: '#ffe07a', 2: '#e6b93a', 3: '#ffb3c6', c: '#ff9a6a' },
+    grid: [
+      '................',
+      '..oo........oo..',
+      '..o3o......o3o..',
+      '..oooooooooooo..',
+      '..o1111111111o..',
+      '..o2222222222o..',
+      '..o1111111111o..',
+      '..o11e1111e11o..',
+      '..o22e2222e22o..',
+      '..o1c111111c1o..',
+      '..o2222mm2222o..',
+      '..o1111111111o..',
+      '..o2222222222o..',
+      '..oooooooooooo..',
+      '...oo......oo...',
+      '................'
+    ],
+    varianten: [
+      { name: 'Frisch', pal: {}, notiz: 'Frisch: messinggelb, mit feinen Streifen auf den Würfelflächen.' },
+      { name: 'Pyritzerfall', pal: { o: '#4a4a48', 1: '#cfcfc4', 2: '#a8a89a', 3: '#e8e8e0', c: '#c8b0a8' }, notiz: 'Pyritzerfall: zu feucht gelagert, grau und weiß ausgeblüht.' }
+    ],
+    spezial: { label: 'Polieren', typ: 'funken', farbe: '#ffffff', punkte: [[1, 4], [14, 5], [7, 0], [0, 11], [15, 12]], text: 'Glänzt wie Gold – ist aber Eisensulfid.' },
+    wesen: 'Katzengold, darum die Katzenohren. Ein Würfel mit gestreiften Flächen, der gern so tut, als wäre er wertvoller.',
+    pflege: 'Trocken halten! Feuchte Luft verträgt Pyrit gar nicht.',
+    fehler: 'Bei zu viel Feuchtigkeit beginnt der Pyritzerfall: Es wird grau und blüht weiß aus.'
+  }
+];
+
+// Schluepf-Buehne: Geoden-Ei, aufgerissenes Ei, Baby
+const EI = {
+  pal: { o: '#5b4a3a', 1: '#c9b8a3', 2: '#a8957e', k: '#3a2c22', x: '#a77bf0' },
+  ganz: [
+    '................',
+    '......oooo......',
+    '....oo1111oo....',
+    '...o11111111o...',
+    '..o1112211111o..',
+    '..o1112211111o..',
+    '.o111111111221o.',
+    '.o111111111221o.',
+    '.o111111111111o.',
+    '.o112211111111o.',
+    '.o112211111111o.',
+    '..o1111111111o..',
+    '..o1111111112o..',
+    '...o11111111o...',
+    '....oooooooo....',
+    '................'
+  ],
+  riss: [
+    '................',
+    '......oooo......',
+    '....oo1111oo....',
+    '...o11111111o...',
+    '..o1112211111o..',
+    '..o1112211111o..',
+    '.o1k111k111k11o.',
+    '.okxkkxkkxkkxko.',
+    '.o11k111k111k1o.',
+    '.o112211111111o.',
+    '.o112211111111o.',
+    '..o1111111111o..',
+    '..o1111111112o..',
+    '...o11111111o...',
+    '....oooooooo....',
+    '................'
+  ]
+};
+const DRUSCHI = {
+  pal: { o: '#4a3a6a', 1: '#d6b8ff', 2: '#f3ecff', c: '#ffb3c6' },
+  grid: [
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '.......oo.......',
+    '......o1ho......',
+    '.....oooooo.....',
+    '....o222222o....',
+    '...o2e2222e2o...',
+    '...oc22mm22co...',
+    '...o22222222o...',
+    '....oooooooo....',
+    '.....o....o.....',
+    '................',
+    '................'
+  ]
+};
+
+const ruhig = window.matchMedia('(prefers-reduced-motion: reduce)');
+let takt = 0;
+
+/// Canvas fuer Pixelgrafik vorbereiten
+function bereiteCanvas(canvas, skala) {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = BREITE * skala * dpr;
+  canvas.height = HOEHE * skala * dpr;
+  canvas.style.width = (BREITE * skala) + 'px';
+  canvas.style.height = (HOEHE * skala) + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr * skala, 0, 0, dpr * skala, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  return ctx;
+}
+
+/// Ein Sprite samt LCD-Hintergrund zeichnen
+function zeichne(ctx, grid, pal, optionen) {
+  const o = optionen || {};
+
+  // LCD-Grund mit feinem Pixelraster
+  ctx.fillStyle = o.hintergrund || '#e6eddb';
+  ctx.fillRect(0, 0, BREITE, HOEHE);
+  ctx.fillStyle = o.raster || 'rgba(40, 55, 30, 0.06)';
+  for (let y = 0; y < HOEHE; y++) {
+    for (let x = 0; x < BREITE; x++) ctx.fillRect(x + 0.1, y + 0.1, 0.8, 0.8);
+  }
+
+  // Sprite eine Zeile tiefer, beim Huepfen eine hoeher
+  const versatz = 1 - (o.hoch ? 1 : 0);
+  grid.forEach((zeile, y) => {
+    for (let x = 0; x < zeile.length && x < BREITE; x++) {
+      let schluessel = zeile[x];
+
+      if (schluessel === '.') continue;
+      if (schluessel === 's' && !o.puschel) continue;
+
+      // Blinzeln: obere Augenhaelfte bekommt die Farbe links daneben
+      if (schluessel === 'e' && o.blinzeln && grid[y + 1] && grid[y + 1][x] === 'e') {
+        schluessel = zeile[x - 1] || '1';
+      }
+
+      const farbe = pal[schluessel];
+      if (!farbe) continue;
+      ctx.fillStyle = farbe;
+      ctx.fillRect(x, y + versatz, 1, 1);
+    }
+  });
+
+  // Effekte obendrauf
+  (o.overlay || []).forEach(p => {
+    if (p.x < 0 || p.x >= BREITE || p.y < 0 || p.y >= HOEHE) return;
+    ctx.fillStyle = p.farbe;
+    ctx.fillRect(p.x, p.y, 1, 1);
+  });
+}
+
+// Karten aufbauen
+const raster = document.getElementById('raster');
+const zustaende = WESEN.map((w, i) => {
+  const karte = document.createElement('article');
+  karte.className = 'karte';
+  karte.id = 'w-' + w.id;
+  karte.innerHTML = `
+    <div class="geraet" style="--schale1:${w.schale[0]};--schale2:${w.schale[1]}">
+      <div class="bildschirm"><canvas aria-label="Pixelbild von ${w.name}"></canvas></div>
+      <div class="knoepfe">
+        <div class="zelle"><button class="knopf" type="button" id="k-${w.id}-v" data-aktion="variante" aria-label="${w.name}: Variante wechseln"></button><span>Variante</span></div>
+        <div class="zelle"><button class="knopf" type="button" id="k-${w.id}-s" data-aktion="spezial" aria-label="${w.name}: ${w.spezial.label}"></button><span>${w.spezial.label}</span></div>
+        <div class="zelle"><button class="knopf" type="button" id="k-${w.id}-h" data-aktion="streicheln" aria-label="${w.name}: Streicheln"></button><span>Streicheln</span></div>
+      </div>
+    </div>
+    <p class="meldung" aria-live="polite"></p>
+    <h2>${w.name}</h2>
+    <p class="mineral"></p>
+    <dl class="etikett">
+      <div><dt>Formel</dt><dd>${w.formel}</dd></div>
+      <div><dt>System</dt><dd>${w.system}</dd></div>
+      <div><dt>Mohs</dt><dd>${w.mohs}</dd></div>
+    </dl>
+    <div class="texte">
+      <p><span class="marke">Wesen</span>${w.wesen}</p>
+      <p><span class="marke">Pflege</span>${w.pflege}</p>
+      <p><span class="marke">Pflegefehler</span>${w.fehler}</p>
+    </div>
+    <div class="chips" role="group" aria-label="Varianten von ${w.name}">
+      ${w.varianten.map((v, n) => `<button class="chip" type="button" id="c-${w.id}-${n}" data-variante="${n}" aria-pressed="${n === 0}">${v.name}</button>`).join('')}
+    </div>`;
+  raster.appendChild(karte);
+
+  const zustand = {
+    karte,
+    ctx: bereiteCanvas(karte.querySelector('canvas'), 7),
+    meldung: karte.querySelector('.meldung'),
+    mineralZeile: karte.querySelector('.mineral'),
+    bildschirm: karte.querySelector('.bildschirm'),
+    geraet: karte.querySelector('.geraet'),
+    variante: 0, funkenBis: 0, herzBis: 0, puschel: true, uv: false
+  };
+
+  zustand.meldung.textContent = w.varianten[0].notiz;
+  zustand.mineralZeile.textContent = `${w.mineral} · ${w.varianten[0].name}`;
+
+  // Tasten am Geraet
+  karte.querySelectorAll('.knopf').forEach(knopf => {
+    knopf.addEventListener('click', () => fuehreAus(i, knopf.dataset.aktion));
+  });
+
+  // Varianten-Chips
+  karte.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => setzeVariante(i, Number(chip.dataset.variante)));
+  });
+
+  return zustand;
+});
+
+/// Variante setzen und Anzeige aktualisieren
+function setzeVariante(i, n) {
+  const w = WESEN[i], z = zustaende[i];
+  z.variante = n;
+  z.karte.querySelectorAll('.chip').forEach(chip => {
+    chip.setAttribute('aria-pressed', String(Number(chip.dataset.variante) === n));
+  });
+  z.mineralZeile.textContent = `${w.mineral} · ${w.varianten[n].name}`;
+  z.meldung.textContent = w.varianten[n].notiz;
+  zeichneKarte(i);
+}
+
+/// Taste am Geraet ausfuehren
+function fuehreAus(i, aktion) {
+  const w = WESEN[i], z = zustaende[i];
+  const jetzt = Date.now();
+
+  if (aktion === 'variante') {
+    setzeVariante(i, (z.variante + 1) % w.varianten.length);
+    return;
+  }
+
+  if (aktion === 'streicheln') {
+    z.herzBis = jetzt + 1600;
+    z.meldung.textContent = `${w.name} mag das.`;
+  }
+
+  if (aktion === 'spezial') {
+    const s = w.spezial;
+
+    if (s.typ === 'funken') {
+      z.funkenBis = jetzt + 1800;
+      z.meldung.textContent = s.text;
+    } else if (s.typ === 'puschel') {
+      z.puschel = !z.puschel;
+      z.meldung.textContent = z.puschel ? s.text : s.textAus;
+    } else if (s.typ === 'uv') {
+      z.uv = !z.uv;
+      z.bildschirm.classList.toggle('uv', z.uv);
+      z.meldung.textContent = z.uv ? s.text : s.textAus;
+    } else if (s.typ === 'wackeln') {
+      z.geraet.classList.remove('schuettelt');
+      void z.geraet.offsetWidth;
+      z.geraet.classList.add('schuettelt');
+      z.meldung.textContent = s.text;
+    }
+  }
+
+  zeichneKarte(i);
+}
+
+/// Eine Karte neu zeichnen
+function zeichneKarte(i) {
+  const w = WESEN[i], z = zustaende[i];
+  const jetzt = Date.now();
+  let pal = Object.assign({}, BASIS, w.basis, w.varianten[z.variante].pal);
+  let hintergrund, rasterFarbe;
+
+  // UV-Modus: dunkler Schirm, leuchtende Farben
+  if (z.uv && w.uvPal) {
+    pal = Object.assign(pal, w.uvPal);
+    hintergrund = '#17122a';
+    rasterFarbe = 'rgba(255, 255, 255, 0.035)';
+  }
+
+  const overlay = [];
+
+  // Funken flackern als Plus-Zeichen
+  if (z.funkenBis > jetzt) {
+    const farbe = w.spezial.farbe;
+    (w.spezial.punkte || STANDARDFUNKEN).forEach(([x, y], n) => {
+      overlay.push({ x, y, farbe });
+      if ((takt + n) % 2 === 0) {
+        [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([a, b]) => overlay.push({ x: x + a, y: y + b, farbe }));
+      }
+    });
+  }
+
+  if (z.herzBis > jetzt) HERZ.forEach(([x, y]) => overlay.push({ x, y, farbe: '#ff4f7b' }));
+
+  zeichne(z.ctx, w.grid, pal, {
+    hoch: !ruhig.matches && takt % 2 === 1,
+    blinzeln: (takt + i * 3) % 11 === 0,
+    puschel: z.puschel,
+    overlay, hintergrund, raster: rasterFarbe
+  });
+}
+
+// Buehne
+const buehne = {
+  ctx: bereiteCanvas(document.getElementById('buehne'), 10),
+  rahmen: document.getElementById('buehnenRahmen'),
+  text: document.getElementById('buehnenText'),
+  knopf: document.getElementById('buehnenKnopf'),
+  phase: 0, erwachsen: 0
+};
+
+const PHASEN = [
+  { text: 'Ein Geoden-Ei. Von außen unscheinbar, wie echte Geoden.', knopf: 'Anstupsen' },
+  { text: 'Es knackt! Durch den Riss glitzert Amethyst.', knopf: 'Schlüpfen lassen' },
+  { text: 'Druschi ist geschlüpft, ein kleiner Kristallkeim mit Spitze.', knopf: 'Großziehen' },
+  { text: '', knopf: 'Neues Ei' }
+];
+
+/// Buehnen-Phase anzeigen
+function zeigePhase() {
+  const p = PHASEN[buehne.phase];
+  buehne.text.textContent = buehne.phase === 3
+    ? `Aus Druschi wurde ${WESEN[buehne.erwachsen].name}, ein ${WESEN[buehne.erwachsen].mineral.split(' ')[0]}.`
+    : p.text;
+  buehne.knopf.textContent = p.knopf;
+  buehne.rahmen.classList.toggle('wackelt', buehne.phase < 2 && !ruhig.matches);
+  zeichneBuehne();
+}
+
+/// Buehne zeichnen
+function zeichneBuehne() {
+  const hoch = !ruhig.matches && takt % 2 === 1;
+
+  if (buehne.phase === 0) {
+    zeichne(buehne.ctx, EI.ganz, EI.pal);
+  } else if (buehne.phase === 1) {
+    zeichne(buehne.ctx, EI.riss, EI.pal);
+  } else if (buehne.phase === 2) {
+    zeichne(buehne.ctx, DRUSCHI.grid, Object.assign({}, BASIS, DRUSCHI.pal), { hoch, blinzeln: takt % 9 === 0 });
+  } else {
+    const w = WESEN[buehne.erwachsen];
+    zeichne(buehne.ctx, w.grid, Object.assign({}, BASIS, w.basis), { hoch, blinzeln: takt % 9 === 0, puschel: true });
+  }
+}
+
+buehne.knopf.addEventListener('click', () => {
+  // Naechste Phase, beim Erwachsenwerden zufaelliges Mineral waehlen
+  buehne.phase = (buehne.phase + 1) % PHASEN.length;
+  if (buehne.phase === 3) buehne.erwachsen = Math.floor(Math.random() * WESEN.length);
+  zeigePhase();
+});
+
+zeigePhase();
+WESEN.forEach((w, i) => zeichneKarte(i));
+
+// Takt fuer Huepfen, Blinzeln und Funken
+setInterval(() => {
+  takt++;
+  WESEN.forEach((w, i) => zeichneKarte(i));
+  zeichneBuehne();
+}, 480);
+</script>

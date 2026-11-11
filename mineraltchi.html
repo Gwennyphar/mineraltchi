@@ -1,0 +1,3403 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mineraltchi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=IBM+Plex+Mono:wght@400;500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: Sammlungsvitrine – Kopf mit Geoden-Buehne, darunter Raster aus Karten mit Geraet + Sammlungsetikett */
+:root {
+  --bg: #f1eff6;
+  --surface: #fbfaff;
+  --ink: #231e2e;
+  --muted: #645d73;
+  --line: #dcd5e8;
+  --accent: #6b4fc2;
+  --accent-ink: #ffffff;
+  --label: #fffdf6;
+  --f-display: "DotGothic16", "MS Gothic", ui-monospace, monospace;
+  --f-body: "Zen Kaku Gothic New", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15121c; --surface: #1e1928; --ink: #ece8f4; --muted: #a69db6;
+    --line: #352e44; --accent: #b49dff; --accent-ink: #1a1426; --label: #262033;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15121c; --surface: #1e1928; --ink: #ece8f4; --muted: #a69db6;
+  --line: #352e44; --accent: #b49dff; --accent-ink: #1a1426; --label: #262033;
+  color-scheme: dark;
+}
+
+/* Ausgeblendete Karten wirklich verstecken (sonst gewinnt display: flex) */
+[hidden] { display: none !important; }
+*, *::before, *::after { box-sizing: border-box; }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55; margin: 0; }
+
+.seite {
+  max-width: 1180px; margin: 0 auto;
+  padding-block: 32px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 36px;
+}
+
+/* Kopf */
+.kopf { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 28px; align-items: center; }
+.kopf h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(2.6rem, 7vw, 4.4rem); line-height: 1; margin: 0 0 14px; letter-spacing: .01em; text-wrap: balance; }
+.kopf .unter { font-size: 1.08rem; max-width: 34em; margin: 0 0 14px; }
+.zyklus { font-family: var(--f-mono); font-size: .8rem; color: var(--muted); margin: 0 0 16px; letter-spacing: .02em; }
+.zyklus b { color: var(--accent); font-weight: 500; }
+.schalter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.schalter > span { font: 500 .7rem var(--f-mono); text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin-right: 4px; }
+
+.buehne { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.buehne .rahmen { padding: 10px; border-radius: 18px; background: #4a4258; box-shadow: inset 0 3px 6px rgba(0,0,0,.35); }
+.buehne canvas { display: block; border-radius: 10px; }
+.buehne p { margin: 0; min-height: 3.1em; max-width: 26em; font-size: .92rem; color: var(--muted); }
+.buehnenknopf { font: 500 .9rem var(--f-body); background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 999px; padding: 8px 20px; cursor: pointer; }
+.buehnenknoepfe { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.buehnenknopf.leise { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.buehnenknopf:focus-visible, .chip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+.wackelt { animation: wackeln .9s ease-in-out infinite; transform-origin: 50% 90%; }
+.schuettelt { animation: schuetteln .5s ease-in-out 1; }
+@keyframes wackeln { 0%,100% { transform: rotate(0) } 25% { transform: rotate(-5deg) } 75% { transform: rotate(5deg) } }
+@keyframes schuetteln { 0%,100% { transform: translateX(0) rotate(0) } 20% { transform: translateX(-6px) rotate(-6deg) } 40% { transform: translateX(6px) rotate(6deg) } 60% { transform: translateX(-4px) rotate(-3deg) } 80% { transform: translateX(4px) rotate(3deg) } }
+
+/* Paragenesen-Labor */
+.labor { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px 20px; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px 28px; align-items: center; }
+.labor h2 { font-family: var(--f-display); font-weight: 400; font-size: 1.7rem; line-height: 1.1; margin: 0 0 8px; }
+.labor h3 { font: 500 .7rem var(--f-mono); text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin: 0 0 8px; }
+.labor p { margin: 0 0 12px; max-width: 40em; }
+.laborFelder { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.laborFelder label { display: grid; gap: 4px; font-size: .78rem; color: var(--muted); min-width: 0; }
+.laborFelder select { font: 400 .9rem var(--f-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; min-width: 0; width: 100%; }
+.laborFelder select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.laborErgebnis { min-height: 3.2em; margin: 12px 0 0 !important; font-size: .92rem; }
+.laborBild { display: flex; justify-content: center; }
+.labor .rahmen { padding: 10px; border-radius: 18px; background: #4a4258; box-shadow: inset 0 3px 6px rgba(0,0,0,.35); }
+.labor canvas { display: block; border-radius: 10px; }
+.laborSammlung { grid-column: 1 / -1; border-top: 1px dashed var(--line); padding-top: 12px; }
+.laborSammlung .chip.unbekannt { color: var(--muted); border-style: dashed; cursor: default; }
+@media (max-width: 720px) { .labor { grid-template-columns: minmax(0, 1fr); } }
+
+/* Filter */
+.filter { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: -18px; }
+.filter .zaehler { margin-left: auto; font: 400 .78rem var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Raster */
+.raster { display: grid; grid-template-columns: repeat(auto-fill, minmax(262px, 1fr)); gap: 18px; }
+.karte { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px 18px 20px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+/* Geraet: Werte fest, weil die Schale in beiden Themes gleich aussieht */
+.geraet {
+  width: 216px; max-width: 100%; aspect-ratio: 216 / 250; margin-inline: auto;
+  border-radius: 50% 50% 47% 47% / 57% 57% 43% 43%;
+  background:
+    radial-gradient(circle at 30% 22%, rgba(255,255,255,.8), rgba(255,255,255,0) 36%),
+    linear-gradient(160deg, var(--schale1), var(--schale2));
+  box-shadow: inset 0 -10px 20px rgba(0,0,0,.13), inset 0 6px 12px rgba(255,255,255,.55), 0 12px 24px rgba(30,20,50,.18);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding-top: 14px;
+}
+.bildschirm { padding: 6px; border-radius: 16px; background: rgba(35,28,48,.28); box-shadow: inset 0 2px 5px rgba(0,0,0,.3); transition: box-shadow .3s; }
+.bildschirm.uv { box-shadow: inset 0 2px 5px rgba(0,0,0,.3), 0 0 22px 4px var(--uvglow, rgba(184,255,60,.65)); }
+.bildschirm canvas { display: block; border-radius: 11px; }
+.knoepfe { display: grid; grid-template-columns: repeat(3, 60px); justify-items: center; }
+.zelle { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.knopf {
+  width: 24px; height: 24px; border-radius: 50%; border: 0; padding: 0; cursor: pointer;
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.55), rgba(255,255,255,0) 58%), #3b3348;
+  box-shadow: 0 2px 0 rgba(0,0,0,.35);
+}
+.knopf:active { transform: translateY(1px); box-shadow: 0 1px 0 rgba(0,0,0,.35); }
+.knopf:focus-visible { outline: 2px solid #231e2e; outline-offset: 2px; }
+.zelle span { font: 500 10.5px/1.1 var(--f-body); color: #2a2433; white-space: nowrap; }
+
+.meldung { margin: 0; min-height: 3.1em; text-align: center; font-size: .86rem; color: var(--muted); }
+.karte h2 { font-family: var(--f-display); font-weight: 400; font-size: 1.6rem; line-height: 1.1; margin: 0; }
+.mineral { margin: -6px 0 0; color: var(--muted); font-size: .9rem; }
+
+.etikett { margin: 0; display: grid; grid-template-columns: 1.5fr 1fr .8fr; gap: 6px 10px; background: var(--label); border: 1px dashed var(--line); border-radius: 6px; padding: 8px 10px; }
+.etikett div { min-width: 0; }
+.etikett .fundort { grid-column: 1 / -1; border-top: 1px dashed var(--line); padding-top: 6px; }
+.etikett dt { font: 500 .62rem var(--f-mono); text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
+.etikett dd { margin: 0; font: 400 .78rem/1.35 var(--f-mono); overflow-wrap: anywhere; }
+
+.texte { display: flex; flex-direction: column; gap: 8px; }
+.texte p { margin: 0; font-size: .9rem; line-height: 1.55; }
+.marke { font-weight: 700; color: var(--accent); margin-right: 4px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 4px; }
+.chip { font: 400 .78rem var(--f-body); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+.fuss { font-size: .84rem; color: var(--muted); max-width: 60em; margin: 0; }
+
+@media (max-width: 720px) {
+  .kopf { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wackelt, .schuettelt { animation: none; }
+}
+</style>
+
+<main class="seite">
+  <header class="kopf">
+    <div>
+      <h1>Mineraltchi</h1>
+      <p class="unter"><span id="anzahl">Viele</span> Kristallwesen zum Großziehen. Jedes schlüpft aus einer Druse oder Achatmandel und wird zu einem Mineral – welches, hängt von der Pflege ab. Die Tasten an den Geräten funktionieren.</p>
+      <p class="zyklus"><b>Druse</b> oder <b>Achatmandel</b> → <b>Druschi</b> (Kristallkeim) → eines von <span id="anzahlZyklus">vielen</span> Mineralen</p>
+      <div class="schalter" role="group" aria-label="Bildschirmdarstellung">
+        <span>Bildschirm</span>
+        <button class="chip" type="button" id="modusPixel" aria-pressed="true">Farb-Pixel</button>
+        <button class="chip" type="button" id="modusGlatt" aria-pressed="false">Glatt</button>
+      </div>
+    </div>
+    <section class="buehne" aria-label="Schlüpfen ausprobieren">
+      <div class="rahmen" id="buehnenRahmen"><canvas id="buehne" aria-label="Bild der Schlüpf-Bühne"></canvas></div>
+      <p id="buehnenText" aria-live="polite"></p>
+      <div class="buehnenknoepfe">
+        <button class="buehnenknopf" id="buehnenKnopf" type="button"></button>
+        <button class="buehnenknopf leise" id="buehnenSchritt" type="button">Nächster Schritt</button>
+      </div>
+    </section>
+  </header>
+
+  <section class="labor" aria-labelledby="laborTitel">
+    <div class="laborText">
+      <h2 id="laborTitel">Paragenesen-Labor</h2>
+      <p>Bring zwei Mineraltchi unter den richtigen Bedingungen zusammen. Manche wachsen nebeneinander zu einer Stufe, andere bekommen Nachwuchs: ein neues Mineral.</p>
+      <div class="laborFelder">
+        <label for="laborA">Erstes Mineraltchi<select id="laborA"></select></label>
+        <label for="laborB">Zweites Mineraltchi<select id="laborB"></select></label>
+        <label for="laborBedingung">Bedingungen<select id="laborBedingung"></select></label>
+      </div>
+      <button class="buehnenknopf" id="laborStart" type="button">Zusammenbringen</button>
+      <p class="laborErgebnis" id="laborErgebnis" aria-live="polite"></p>
+    </div>
+    <div class="laborBild"><div class="rahmen"><canvas id="laborCanvas" aria-label="Bild aus dem Paragenesen-Labor"></canvas></div></div>
+    <div class="laborSammlung">
+      <h3>Entdeckt <span id="laborZaehler"></span></h3>
+      <div class="chips" id="laborListe"></div>
+    </div>
+  </section>
+
+  <nav class="filter" id="filter" aria-label="Nach Familie filtern"></nav>
+
+  <section class="raster" id="raster" aria-label="Die Mineraltchi"></section>
+
+  <p class="fuss">Eigene Figuren im Stil virtueller Haustiere. Formeln, Kristallsysteme, Härten, Varietäten und Fundorte sind echte Mineralogie, die Pflegeregeln sind ausgedacht. Typlokalitäten nach bestem Wissen – zum Gegenprüfen eignet sich mindat.org.</p>
+</main>
+
+<script>
+// ===== Zeichenwerkzeuge (Koordinaten immer 0..100) =====
+
+const PIXEL_AUFLOESUNG = 64;
+const AUGE = '#2a2238';
+let pixelModus = true;
+
+/// Pfad aus Punkten anlegen
+function pfad(ctx, punkte) {
+  ctx.beginPath();
+  ctx.moveTo(punkte[0][0], punkte[0][1]);
+  for (let k = 1; k < punkte.length; k++) ctx.lineTo(punkte[k][0], punkte[k][1]);
+  ctx.closePath();
+}
+
+/// Flaeche fuellen
+function flaeche(ctx, punkte, fuellung) {
+  pfad(ctx, punkte);
+  ctx.fillStyle = fuellung;
+  ctx.fill();
+}
+
+/// Umriss zeichnen
+function umriss(ctx, punkte, farbe, breite) {
+  pfad(ctx, punkte);
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = breite || 2.4;
+  ctx.strokeStyle = farbe;
+  ctx.stroke();
+}
+
+/// Offene Linie zeichnen
+function linie(ctx, punkte, farbe, breite) {
+  ctx.beginPath();
+  ctx.moveTo(punkte[0][0], punkte[0][1]);
+  for (let k = 1; k < punkte.length; k++) ctx.lineTo(punkte[k][0], punkte[k][1]);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = breite || 1;
+  ctx.strokeStyle = farbe;
+  ctx.stroke();
+}
+
+/// Helle Kristallkanten
+function kanten(ctx, listen) {
+  listen.forEach(l => linie(ctx, l, 'rgba(255, 255, 255, 0.38)', 0.8));
+}
+
+/// Ellipse als Pfad
+function oval(ctx, x, y, rx, ry) {
+  ctx.beginPath();
+  ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+}
+
+/// Abgerundetes Rechteck als Pfad
+function rundRechteck(ctx, x, y, b, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + b, y, x + b, y + h, r);
+  ctx.arcTo(x + b, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + b, y, r);
+  ctx.closePath();
+}
+
+/// Linearer Verlauf
+function verlauf(ctx, x0, y0, x1, y1, farben) {
+  const v = ctx.createLinearGradient(x0, y0, x1, y1);
+  farben.forEach((f, k) => v.addColorStop(k / (farben.length - 1), f));
+  return v;
+}
+
+/// Radialer Verlauf
+function radial(ctx, x0, y0, r0, x1, y1, r1, farben) {
+  const v = ctx.createRadialGradient(x0, y0, r0, x1, y1, r1);
+  farben.forEach((f, k) => v.addColorStop(k / (farben.length - 1), f));
+  return v;
+}
+
+/// Vierzackiger Glitzerstern
+function stern(ctx, x, y, r, farbe) {
+  ctx.beginPath();
+  ctx.moveTo(x, y - r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.quadraticCurveTo(x, y, x, y + r);
+  ctx.quadraticCurveTo(x, y, x - r, y);
+  ctx.quadraticCurveTo(x, y, x, y - r);
+  ctx.fillStyle = farbe;
+  ctx.fill();
+}
+
+/// Herz
+function herz(ctx, x, y, s, farbe) {
+  ctx.beginPath();
+  ctx.moveTo(x, y + s * 0.9);
+  ctx.bezierCurveTo(x - s * 1.4, y, x - s * 0.7, y - s, x, y - s * 0.3);
+  ctx.bezierCurveTo(x + s * 0.7, y - s, x + s * 1.4, y, x, y + s * 0.9);
+  ctx.fillStyle = farbe;
+  ctx.fill();
+}
+
+/// Kleine Fuesse
+function fuesse(ctx, x1, x2, y, f) {
+  [x1, x2].forEach(x => {
+    oval(ctx, x, y, 6, 3.4);
+    ctx.fillStyle = f.c || f.b;
+    ctx.fill();
+    ctx.lineWidth = 1.8;
+    ctx.strokeStyle = f.o;
+    ctx.stroke();
+  });
+}
+
+/// Gesicht mit grossen Glanzaugen, Wangen und Katzenmund
+function gesicht(ctx, x, y, s, f, opt) {
+  const o = opt || {};
+  const abstand = 9 * s;
+  const strich = f.dunkel ? '#f2eef8' : AUGE;
+
+  // Wangen
+  ctx.fillStyle = f.wange || 'rgba(255, 120, 160, 0.5)';
+  oval(ctx, x - abstand - 3.4 * s, y + 5.6 * s, 4 * s, 2.4 * s);
+  ctx.fill();
+  oval(ctx, x + abstand + 3.4 * s, y + 5.6 * s, 4 * s, 2.4 * s);
+  ctx.fill();
+
+  [-1, 1].forEach(seite => {
+    const ax = x + seite * abstand;
+    const zu = o.blinzeln || (o.zwinkern && seite === 1);
+
+    // Geschlossenes Auge als Bogen
+    if (zu) {
+      ctx.beginPath();
+      ctx.arc(ax, y + 1.6 * s, 3.4 * s, Math.PI * 1.15, Math.PI * 1.85);
+      ctx.strokeStyle = strich;
+      ctx.lineWidth = 1.6 * s;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      return;
+    }
+
+    // Heller Rand auf dunklen Koerpern
+    if (f.dunkel) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      oval(ctx, ax, y, 4.6 * s, 6.2 * s);
+      ctx.fill();
+    }
+
+    // Auge, Schimmer unten, zwei Glanzpunkte
+    ctx.fillStyle = AUGE;
+    oval(ctx, ax, y, 3.6 * s, 5.2 * s);
+    ctx.fill();
+    ctx.fillStyle = f.iris || 'rgba(160, 130, 255, 0.6)';
+    oval(ctx, ax, y + 2.5 * s, 2.4 * s, 1.8 * s);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    oval(ctx, ax - 1.2 * s, y - 2.1 * s, 1.5 * s, 1.7 * s);
+    ctx.fill();
+    oval(ctx, ax + 1.4 * s, y + 1.4 * s, 0.7 * s, 0.7 * s);
+    ctx.fill();
+  });
+
+  // Mund in w-Form
+  ctx.strokeStyle = strich;
+  ctx.lineWidth = 1.3 * s;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(x - 1.6 * s, y + 5 * s, 1.6 * s, 0, Math.PI);
+  ctx.moveTo(x + 3.2 * s, y + 5 * s);
+  ctx.arc(x + 1.6 * s, y + 5 * s, 1.6 * s, 0, Math.PI);
+  ctx.stroke();
+}
+
+/// Einzelne Kristallspitze (Amethyst, Druschi)
+function kristall(ctx, cx, oben, b, unten, f) {
+  const schulter = oben + b * 1.5;
+  flaeche(ctx, [[cx - b, unten], [cx - b, schulter], [cx, oben], [cx, unten]], f.a);
+  flaeche(ctx, [[cx, oben], [cx + b, schulter], [cx + b, unten], [cx, unten]], f.b);
+  kanten(ctx, [[[cx - b, schulter], [cx, schulter + b * 0.4], [cx + b, schulter]]]);
+  flaeche(ctx, [[cx - b + 2, schulter + 2], [cx - b + 4.5, schulter + 3], [cx - b + 4.5, unten - 4], [cx - b + 2, unten - 5]], 'rgba(255, 255, 255, 0.45)');
+  umriss(ctx, [[cx - b, unten], [cx - b, schulter], [cx, oben], [cx + b, schulter], [cx + b, unten]], f.o, 2.2);
+}
+
+/// Wuerfel in Schraegansicht (Galenit, Pyrit)
+function wuerfel(ctx, f) {
+  flaeche(ctx, [[22, 40], [32, 30], [78, 30], [68, 40]], f.hell);
+  flaeche(ctx, [[68, 40], [78, 30], [78, 76], [68, 86]], f.c);
+  pfad(ctx, [[22, 40], [68, 40], [68, 86], [22, 86]]);
+  ctx.fillStyle = verlauf(ctx, 22, 40, 68, 86, [f.b, f.hell, f.a, f.b]);
+  ctx.fill();
+}
+
+/// Wuerfelumriss
+function wuerfelUmriss(ctx, f) {
+  umriss(ctx, [[22, 40], [32, 30], [78, 30], [78, 76], [68, 86], [22, 86]], f.o);
+  linie(ctx, [[22, 40], [68, 40], [78, 30]], f.o, 1.3);
+  linie(ctx, [[68, 40], [68, 86]], f.o, 1.3);
+}
+
+/// Faesschen der Apatit-Gruppe (Pyromorphit, Vanadinit)
+function maleFaesschen(ctx, f, o) {
+  fuesse(ctx, 39, 61, 90, f);
+
+  // Bauchiger Koerper
+  ctx.beginPath();
+  ctx.moveTo(30, 30);
+  ctx.quadraticCurveTo(19, 58, 30, 86);
+  ctx.lineTo(70, 86);
+  ctx.quadraticCurveTo(81, 58, 70, 30);
+  ctx.closePath();
+  ctx.fillStyle = verlauf(ctx, 22, 0, 78, 0, [f.c, f.a, f.b, f.c]);
+  ctx.fill();
+  ctx.lineWidth = 2.4;
+  ctx.strokeStyle = f.o;
+  ctx.stroke();
+
+  // Gewoelbte Prismenkanten
+  [38, 50, 62].forEach(x => {
+    ctx.beginPath();
+    ctx.moveTo(x, 32);
+    ctx.quadraticCurveTo(x + (x - 50) * 0.45, 58, x, 85);
+    ctx.lineWidth = 0.9;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.32)';
+    ctx.stroke();
+  });
+
+  // Hohle Enden
+  oval(ctx, 50, 30, 20, 5);
+  ctx.fillStyle = f.a;
+  ctx.fill();
+  ctx.lineWidth = 2.2;
+  ctx.strokeStyle = f.o;
+  ctx.stroke();
+  oval(ctx, 50, 30.6, 12, 2.8);
+  ctx.fillStyle = f.c;
+  ctx.fill();
+
+  gesicht(ctx, 50, 60, 1, f, o);
+}
+
+// ===== Die Mineraltchi =====
+
+const STANDARDFUNKEN = [[14, 18], [86, 14], [8, 56], [92, 62], [22, 6], [78, 4]];
+
+const WESEN = [
+  {
+    id: 'quarz', name: 'Quarzitchi', mineral: 'Quarz', formel: 'SiO₂', system: 'trigonal', mohs: '7',
+    schale: ['#f6f9fd', '#c9d6ea'],
+    varianten: [
+      { name: 'Bergkristall', farben: { a: '#ffffff', b: '#e3edf9', c: '#bccbe0', o: '#5a6b8a' }, notiz: 'Bergkristall: farblos und klar – die Grundform.' },
+      { name: 'Rauchquarz', farben: { a: '#d9c8b4', b: '#a88f78', c: '#7a6250', o: '#3a2e26' }, notiz: 'Rauchquarz: natürliche Strahlung macht ihn rauchig braun.' },
+      { name: 'Morion', farben: { a: '#4a413a', b: '#2e2722', c: '#1a1512', o: '#000000', dunkel: true, wange: 'rgba(255, 140, 160, 0.35)' }, notiz: 'Morion: fast schwarzer, undurchsichtiger Rauchquarz – die dunkelste Form.' },
+      { name: 'Citrin', farben: { a: '#fff3c2', b: '#f6d36a', c: '#dba634', o: '#7a5212' }, notiz: 'Citrin: natürlich gelb durch Eisen. Viele Citrine im Handel sind aber gebrannter Amethyst.' },
+      { name: 'Rosenquarz', farben: { a: '#ffe8ef', b: '#f8c2d2', c: '#e59ab2', o: '#7a3e52' }, notiz: 'Rosenquarz: zartrosa durch feinste eingelagerte Fasern.' },
+      { name: 'Rutilquarz', farben: { a: '#ffffff', b: '#e3edf9', c: '#bccbe0', o: '#5a6b8a', rutil: '#d99a1a' }, notiz: 'Rutilquarz: goldene Rutilnadeln im Inneren, auch „Venushaar“ genannt.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 41, 59, 89, f);
+
+      // Prismenflaechen und Spitze
+      flaeche(ctx, [[30, 40], [42, 46], [42, 88], [30, 82]], f.a);
+      flaeche(ctx, [[42, 46], [58, 46], [58, 88], [42, 88]], f.b);
+      flaeche(ctx, [[58, 46], [70, 40], [70, 82], [58, 88]], f.c);
+      flaeche(ctx, [[50, 10], [30, 40], [42, 46]], f.a);
+      flaeche(ctx, [[50, 10], [42, 46], [58, 46]], f.b);
+      flaeche(ctx, [[50, 10], [58, 46], [70, 40]], f.c);
+
+      // Rutilnadeln
+      if (f.rutil) {
+        linie(ctx, [[35, 50], [52, 84]], f.rutil, 0.9);
+        linie(ctx, [[56, 48], [45, 76]], f.rutil, 0.7);
+        linie(ctx, [[64, 56], [57, 85]], f.rutil, 0.8);
+        linie(ctx, [[46, 20], [40, 42]], f.rutil, 0.6);
+      }
+
+      flaeche(ctx, [[33, 44], [36, 45.5], [36, 79], [33, 77.5]], 'rgba(255, 255, 255, 0.55)');
+      kanten(ctx, [[[42, 46], [42, 88]], [[58, 46], [58, 88]], [[30, 40], [42, 46], [58, 46], [70, 40]], [[42, 46], [50, 10], [58, 46]]]);
+      umriss(ctx, [[50, 10], [70, 40], [70, 82], [58, 88], [42, 88], [30, 82], [30, 40]], f.o);
+      gesicht(ctx, 50, 64, 1, f, o);
+    },
+    spezial: { label: 'Drücken', typ: 'funken', farbe: '#ffd23a', punkte: [[20, 14], [80, 10], [10, 50], [90, 44], [8, 80], [92, 74]], text: 'Knister! Quarz ist piezoelektrisch: Druck erzeugt elektrische Spannung.' },
+    wesen: 'Ruhig, klar und ein bisschen eitel. Wächst am liebsten langsam in warmem Wasser – so entstehen auch echte Quarzkristalle.',
+    pflege: 'Die Farbe hängt davon ab, was in seinem Wasser gelöst war und wie viel Strahlung es abbekommt.',
+    fehler: 'Zu viel Strahlung macht aus Bergkristall einen Rauchquarz, noch mehr einen schwarzen Morion.'
+  },
+  {
+    id: 'amethyst', name: 'Amethytchi', mineral: 'Amethyst (Quarz)', formel: 'SiO₂', system: 'trigonal', mohs: '7',
+    schale: ['#e6d8ff', '#9b74e0'],
+    varianten: [
+      { name: 'Amethyst', farben: { a: '#e2ccff', b: '#a77ce8', c: '#7f52cc', o: '#3a1f5e', stein1: '#b5aca3', stein2: '#7e756c' }, notiz: 'Amethyst: violett durch Eisenspuren plus natürliche Strahlung.' },
+      { name: 'Citrin (gebrannt)', farben: { a: '#fff0b0', b: '#f2c040', c: '#c98a18', o: '#6a420c', stein1: '#b5aca3', stein2: '#7e756c' }, notiz: 'Gebrannter Amethyst: Die Hitze nimmt ihm das Violett, er wird gelb wie Citrin.' },
+      { name: 'Prasiolith', farben: { a: '#e6f6d6', b: '#b6dc98', c: '#86b868', o: '#2a4a2a', stein1: '#b5aca3', stein2: '#7e756c' }, notiz: 'Prasiolith: grün. Entsteht, wenn man Amethyst aus bestimmten Fundstellen erhitzt.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 38, 62, 91, f);
+      kristall(ctx, 29, 30, 9, 78, f);
+      kristall(ctx, 71, 30, 9, 78, f);
+
+      // Muttergestein
+      ctx.beginPath();
+      ctx.moveTo(16, 76);
+      ctx.quadraticCurveTo(14, 92, 32, 92);
+      ctx.lineTo(68, 92);
+      ctx.quadraticCurveTo(86, 92, 84, 76);
+      ctx.quadraticCurveTo(50, 70, 16, 76);
+      ctx.closePath();
+      ctx.fillStyle = verlauf(ctx, 0, 70, 0, 92, [f.stein1, f.stein2]);
+      ctx.fill();
+      ctx.lineWidth = 2.2;
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      [[26, 84], [40, 88], [62, 87], [74, 83]].forEach(([x, y]) => { oval(ctx, x, y, 1.6, 1.1); ctx.fill(); });
+
+      kristall(ctx, 50, 10, 15, 83, f);
+      gesicht(ctx, 50, 58, 0.95, f, o);
+    },
+    spezial: { label: 'Erhitzen', typ: 'zuVariante', ziel: 1, text: 'Zu heiß! Erhitzt verliert Amethyst sein Violett und wird gelb – viele Citrine im Handel sind so entstanden.' },
+    wesen: 'Der Sonder-Quarz der Familie. Sitzt nicht allein, sondern als ganze Druse aus drei Spitzen auf einem Stück Gestein, wie in einer aufgeschlagenen Geode.',
+    pflege: 'Kühl und schattig halten. Auch starkes Sonnenlicht lässt Amethyst mit der Zeit ausbleichen.',
+    fehler: 'Zu viel Hitze, und aus dem violetten Amethyst wird ein gelber „Citrin“.'
+  },
+  {
+    id: 'turmalin', name: 'Turmatchi', mineral: 'Turmalin', formel: 'Borsilikat, z. B. Elbait', system: 'trigonal', mohs: '7–7,5',
+    schale: ['#ffd3e2', '#9fdfb2'],
+    varianten: [
+      { name: 'Wassermelone', farben: { oben1: '#a6e8b6', oben2: '#4fae6c', unten1: '#ffb3cc', unten2: '#f0739e', kern: '#ff8fb5', c: '#4fae6c', o: '#33293d' }, notiz: 'Wassermelone: innen rosa, außen grün – zwei Wachstumsphasen mit unterschiedlicher Chemie.' },
+      { name: 'Rubellit', farben: { oben1: '#ffa9c6', oben2: '#e0507f', unten1: '#ffa9c6', unten2: '#c8336a', kern: '#ff7aa8', c: '#c8336a', o: '#3d1426', wange: 'rgba(255, 230, 240, 0.6)' }, notiz: 'Rubellit: durch und durch rot-rosa.' },
+      { name: 'Indigolith', farben: { oben1: '#b0caff', oben2: '#4a74d6', unten1: '#b0caff', unten2: '#4a74d6', kern: '#d4e2ff', c: '#4a74d6', o: '#14264e' }, notiz: 'Indigolith: der blaue Turmalin.' },
+      { name: 'Schörl', farben: { oben1: '#56526a', oben2: '#25222c', unten1: '#56526a', unten2: '#25222c', kern: '#3a3644', c: '#25222c', o: '#0c0b10', dunkel: true, wange: 'rgba(255, 140, 170, 0.35)' }, notiz: 'Schörl: der schwarze und häufigste Turmalin. Hier die Laune nach zu wenig Abstauben.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      // Saeule, oben gruen, unten rosa
+      ctx.save();
+      rundRechteck(ctx, 28, 30, 44, 58, 7);
+      ctx.clip();
+      ctx.fillStyle = verlauf(ctx, 28, 0, 72, 0, [f.oben2, f.oben1, f.oben2]);
+      ctx.fillRect(28, 30, 44, 58);
+      ctx.fillStyle = verlauf(ctx, 28, 0, 72, 0, [f.unten2, f.unten1, f.unten2]);
+      ctx.fillRect(28, 70, 44, 18);
+
+      // Laengsrillen
+      [34, 40, 46, 54, 60, 66].forEach(x => linie(ctx, [[x, 36], [x, 86]], 'rgba(255, 255, 255, 0.25)', 0.8));
+      ctx.restore();
+      rundRechteck(ctx, 28, 30, 44, 58, 7);
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+
+      // Kopfflaeche mit Querschnitt
+      oval(ctx, 50, 31, 22, 6);
+      ctx.fillStyle = f.oben1;
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      oval(ctx, 50, 31, 12, 3.2);
+      ctx.fillStyle = f.kern;
+      ctx.fill();
+
+      gesicht(ctx, 50, 54, 1, f, o);
+    },
+    spezial: { label: 'Aufwärmen', typ: 'funken', farbe: '#ffd84a', punkte: [[30, 12], [50, 8], [70, 12], [14, 26], [86, 24], [8, 58], [92, 54]], text: 'Warm geworden und elektrisch geladen (Pyroelektrizität). Jetzt bleibt der Staub an ihm kleben.' },
+    wesen: 'Zweifarbig wie eine Wassermelone. Hat einen dreieckigen Querschnitt und feine Längsrillen an den Seiten.',
+    pflege: 'Nach jedem Aufwärmen abstauben, sonst zieht es Staub und Fussel an.',
+    fehler: 'Zu selten abgestaubt, wird es zum mürrischen schwarzen Schörl.'
+  },
+  {
+    id: 'beryll', name: 'Berytchi', mineral: 'Beryll', formel: 'Be₃Al₂Si₆O₁₈', system: 'hexagonal', mohs: '7,5–8',
+    schale: ['#c2f2d6', '#5ccc92'],
+    varianten: [
+      { name: 'Smaragd', farben: { top: '#c4f7da', a: '#6fe0a2', b: '#2fbf72', c: '#18874e', o: '#0f4029' }, notiz: 'Smaragd: grün durch Chrom oder Vanadium.' },
+      { name: 'Aquamarin', farben: { top: '#e6f9ff', a: '#a8e6f6', b: '#6ccbe6', c: '#3d98bd', o: '#1d4a66' }, notiz: 'Aquamarin: meerblau durch Eisen.' },
+      { name: 'Morganit', farben: { top: '#fff2f5', a: '#fbcbd7', b: '#f0a3b9', c: '#c97790', o: '#6a3445' }, notiz: 'Morganit: pfirsichrosa durch Mangan.' },
+      { name: 'Heliodor', farben: { top: '#fffad2', a: '#fbe27a', b: '#eec23a', c: '#b88f18', o: '#6a4e0c' }, notiz: 'Heliodor: goldgelb durch dreiwertiges Eisen.' },
+      { name: 'Goshenit', farben: { top: '#ffffff', a: '#f3f6fa', b: '#e0e7ef', c: '#c2cedb', o: '#5a6470' }, notiz: 'Goshenit: farblos, ganz ohne färbende Spuren.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 39, 61, 90, f);
+
+      // Sechseckige Saeule mit flacher Kopfflaeche
+      flaeche(ctx, [[26, 32], [38, 38], [38, 90], [26, 84]], f.a);
+      flaeche(ctx, [[38, 38], [62, 38], [62, 90], [38, 90]], f.b);
+      flaeche(ctx, [[62, 38], [74, 32], [74, 84], [62, 90]], f.c);
+      flaeche(ctx, [[26, 32], [38, 26], [62, 26], [74, 32], [62, 38], [38, 38]], f.top);
+      flaeche(ctx, [[41, 42], [44, 42], [44, 86], [41, 86]], 'rgba(255, 255, 255, 0.4)');
+      kanten(ctx, [[[38, 38], [38, 90]], [[62, 38], [62, 90]]]);
+      umriss(ctx, [[26, 32], [38, 26], [62, 26], [74, 32], [74, 84], [62, 90], [38, 90], [26, 84]], f.o);
+      linie(ctx, [[26, 32], [38, 38], [62, 38], [74, 32]], f.o, 1.3);
+      gesicht(ctx, 50, 62, 1, f, o);
+    },
+    spezial: { label: 'Glänzen', typ: 'funken', farbe: '#ffffff', punkte: [[14, 20], [86, 24], [10, 66], [90, 72], [50, 10]], text: 'Glasglanz! Mit Mohs 7,5–8 ist Beryll sogar härter als Quarz.' },
+    wesen: 'Eine Familie mit vielen Gesichtern: Dieselbe sechseckige Säule wird je nach Spurenelement grün, blau, rosa, gelb oder farblos.',
+    pflege: 'Das Futter bestimmt die Farbe: Chrom, Eisen oder Mangan. Mit der Variante-Taste ausprobieren.',
+    fehler: 'Smaragde haben oft Einschlüsse, im Fachjargon „Jardin“ (Garten). Das ist kein Fehler, sondern Charakter.'
+  },
+  {
+    id: 'wavellit', name: 'Wavelitchi', mineral: 'Wavellit', formel: 'Al₃(PO₄)₂(OH,F)₃ · 5H₂O', system: 'orthorhombisch', mohs: '3,5–4',
+    schale: ['#e6f6cc', '#a6d877'],
+    varianten: [
+      { name: 'Grün', farben: { a: '#d2f4a8', b: '#8fd060', c: '#5a9e36', s: '#dcf7a8', o: '#2c5530' }, notiz: 'Grün: die typische Farbe der Wavellit-Sonnen.' },
+      { name: 'Gelbgrün', farben: { a: '#f4f7b8', b: '#d0da5c', c: '#9aa830', s: '#f4f7c4', o: '#55551c' }, notiz: 'Gelbgrün: ebenfalls häufig.' },
+      { name: 'Weiß', farben: { a: '#ffffff', b: '#e8ece2', c: '#bfc8b8', s: '#f6f8f2', o: '#5a6470' }, notiz: 'Weiß: farblose Rosetten.' }
+    ],
+    male: (ctx, f, o) => {
+
+      // Nadeln rundherum
+      if (o.puschel) {
+        for (let k = 0; k < 18; k++) {
+          const w = k / 18 * Math.PI * 2;
+          const d = 0.09;
+          pfad(ctx, [
+            [50 + Math.cos(w - d) * 27, 57 + Math.sin(w - d) * 27],
+            [50 + Math.cos(w) * 39, 57 + Math.sin(w) * 39],
+            [50 + Math.cos(w + d) * 27, 57 + Math.sin(w + d) * 27]
+          ]);
+          ctx.fillStyle = f.s;
+          ctx.fill();
+          ctx.lineWidth = 1.2;
+          ctx.strokeStyle = f.o;
+          ctx.stroke();
+        }
+      }
+
+      fuesse(ctx, 42, 58, 89, f);
+
+      // Kugel mit strahligem Inneren
+      oval(ctx, 50, 57, 30, 30);
+      ctx.fillStyle = radial(ctx, 40, 45, 3, 50, 57, 31, [f.a, f.b, f.c]);
+      ctx.fill();
+      for (let k = 0; k < 28; k++) {
+        const w = k / 28 * Math.PI * 2;
+        linie(ctx, [[50 + Math.cos(w) * 9, 57 + Math.sin(w) * 9], [50 + Math.cos(w) * 29, 57 + Math.sin(w) * 29]], 'rgba(255, 255, 255, 0.28)', 0.9);
+      }
+      oval(ctx, 50, 57, 30, 30);
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+
+      gesicht(ctx, 50, 58, 1, f, o);
+    },
+    spezial: { label: 'Nadeln', typ: 'puschel', text: 'Nadeln auf! So strahlig sieht Wavellit aus, wenn man eine Kugel aufbricht.', textAus: 'Nadeln angelegt – jetzt ist es eine glatte Kugel.' },
+    wesen: 'Ein runder Puschel aus strahligen Nadeln. Sitzt am liebsten flach auf Kluftflächen im Gestein und bildet dort grüne „Sonnen“.',
+    pflege: 'Mag Gesellschaft: Wavellit wächst fast nie allein, sondern in ganzen Grüppchen.',
+    fehler: 'Weich und spröde – bitte nicht fallen lassen.'
+  },
+  {
+    id: 'autunit', name: 'Autunitchi', mineral: 'Autunit', formel: 'Ca(UO₂)₂(PO₄)₂ · 10–12H₂O', system: 'tetragonal', mohs: '2–2,5',
+    schale: ['#f4f6a6', '#cddd58'],
+    uvFarben: { a: '#eaff8a', b: '#b8ff3a', c: '#7ad81a', o: '#2a5a10', iris: 'rgba(190, 255, 80, 0.7)' },
+    varianten: [
+      { name: 'Autunit', farben: { a: '#f6f99a', b: '#dbe54a', c: '#a8b52a', o: '#5e5d18' }, notiz: 'Autunit: frisch und mit vollem Kristallwasser.' },
+      { name: 'Meta-Autunit', farben: { a: '#f2f1da', b: '#d9d7aa', c: '#b2af7c', o: '#6e6a4e' }, notiz: 'Meta-Autunit: ausgetrocknet und blass. Hat das Trinken vergessen.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 38, 62, 90, f);
+
+      // Plattenstapel
+      flaeche(ctx, [[72, 42], [80, 35], [80, 80], [72, 87]], f.c);
+      flaeche(ctx, [[26, 42], [34, 35], [80, 35], [72, 42]], f.a);
+      pfad(ctx, [[26, 42], [72, 42], [72, 87], [26, 87]]);
+      ctx.fillStyle = verlauf(ctx, 26, 42, 72, 87, [f.a, f.b]);
+      ctx.fill();
+      [54, 65, 76].forEach(y => linie(ctx, [[26, y], [72, y], [80, y - 7]], f.c, 1));
+      umriss(ctx, [[26, 42], [34, 35], [80, 35], [80, 80], [72, 87], [26, 87]], f.o);
+      linie(ctx, [[26, 42], [72, 42], [80, 35]], f.o, 1.3);
+      linie(ctx, [[72, 42], [72, 87]], f.o, 1.3);
+
+      // Huetchen aus einem schraegen Taefelchen
+      ctx.save();
+      ctx.translate(52, 29);
+      ctx.rotate(-0.2);
+      flaeche(ctx, [[-13, -3], [-9, -7], [15, -7], [11, -3]], f.a);
+      flaeche(ctx, [[-13, -3], [11, -3], [11, 3], [-13, 3]], f.b);
+      flaeche(ctx, [[11, -3], [15, -7], [15, -1], [11, 3]], f.c);
+      umriss(ctx, [[-13, -3], [-9, -7], [15, -7], [15, -1], [11, 3], [-13, 3]], f.o, 1.8);
+      ctx.restore();
+
+      gesicht(ctx, 49, 62, 1, f, o);
+    },
+    spezial: { label: 'UV-Lampe', typ: 'uv', text: 'Unter UV-Licht leuchtet Autunit grell gelbgrün.', textAus: 'Lampe aus.' },
+    wesen: 'Quadratische, gelbgrüne Täfelchen, gestapelt wie ein kleines Hütchen. Leuchtet im Dunkeln unter der UV-Lampe.',
+    pflege: 'Regelmäßig trinken lassen! Das echte Mineral ist außerdem radioaktiv – Autunitchi trägt man besser nicht in der Hosentasche.',
+    fehler: 'Ohne Wasser verliert es Kristallwasser und wird zum blassen Meta-Autunit. Das passiert auch bei echten Stufen.'
+  },
+  {
+    id: 'wulfenit', name: 'Wulfitchi', mineral: 'Wulfenit', formel: 'PbMoO₄', system: 'tetragonal', mohs: '3',
+    schale: ['#ffd8ad', '#ff9a4a'],
+    varianten: [
+      { name: 'Orange', farben: { a: '#ffc274', b: '#f78a2a', c: '#c85a14', ohr: '#ffe0b8', o: '#5e240c' }, notiz: 'Orange: der Klassiker.' },
+      { name: 'Honiggelb', farben: { a: '#ffe592', b: '#f2bd34', c: '#b98810', ohr: '#fff2c8', o: '#5e420c' }, notiz: 'Honiggelb: typisch für Bleiberg in Kärnten, wo Wulfen das Mineral beschrieben hat.' },
+      { name: 'Rot', farben: { a: '#ff9262', b: '#e8461e', c: '#a82a0e', ohr: '#ffc2a8', o: '#4e1006', wange: 'rgba(255, 220, 200, 0.55)' }, notiz: 'Rot: berühmt aus der Red Cloud Mine in Arizona.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 34, 62, 86, f);
+
+      // Wolfsohren
+      flaeche(ctx, [[20, 33], [23, 13], [39, 29]], f.b);
+      umriss(ctx, [[20, 33], [23, 13], [39, 29]], f.o, 2);
+      flaeche(ctx, [[24, 29], [25.5, 19.5], [33, 28]], f.ohr);
+      flaeche(ctx, [[80, 33], [77, 13], [61, 29]], f.b);
+      umriss(ctx, [[80, 33], [77, 13], [61, 29]], f.o, 2);
+      flaeche(ctx, [[76, 29], [74.5, 19.5], [67, 28]], f.ohr);
+
+      // Duennes Taefelchen mit sichtbarer Kante
+      flaeche(ctx, [[16, 33], [22, 28], [86, 28], [80, 33]], f.a);
+      flaeche(ctx, [[80, 33], [86, 28], [86, 76], [80, 81]], f.c);
+      pfad(ctx, [[16, 33], [80, 33], [80, 81], [16, 81]]);
+      ctx.fillStyle = verlauf(ctx, 16, 33, 80, 81, [f.a, f.b]);
+      ctx.fill();
+
+      // Wachstumszonen
+      umriss(ctx, [[24, 40], [72, 40], [72, 74], [24, 74]], 'rgba(255, 255, 255, 0.3)', 1);
+      umriss(ctx, [[16, 33], [22, 28], [86, 28], [86, 76], [80, 81], [16, 81]], f.o);
+      linie(ctx, [[16, 33], [80, 33], [86, 28]], f.o, 1.3);
+      linie(ctx, [[80, 33], [80, 81]], f.o, 1.3);
+      gesicht(ctx, 48, 58, 1, f, o);
+    },
+    spezial: { label: 'Schütteln', typ: 'wackeln', text: 'Vorsicht! Wulfenit-Täfelchen sind hauchdünn und brechen leicht.' },
+    wesen: 'Ein hauchdünnes, quadratisches Täfelchen. Heißt nach dem Naturforscher Franz Xaver von Wulfen, sieht aber trotzdem aus wie ein kleiner Wolf.',
+    pflege: 'Immer flach tragen und nie stapeln.',
+    fehler: 'Einmal zu wild geschüttelt, hat es eine abgebrochene Ecke – für immer.'
+  },
+  {
+    id: 'sphalerit', name: 'Sphalitchi', mineral: 'Sphalerit (Zinkblende)', formel: 'ZnS', system: 'kubisch', mohs: '3,5–4',
+    schale: ['#f2cc9a', '#b6743a'],
+    varianten: [
+      { name: 'Zinkblende', farben: { a: '#eeac5c', b: '#b06a28', c: '#7a4416', o: '#33190a' }, notiz: 'Zinkblende: harzig-braun, der Normalfall.' },
+      { name: 'Rubinblende', farben: { a: '#ff8466', b: '#d0321e', c: '#8a160c', o: '#3e0a06', wange: 'rgba(255, 220, 210, 0.55)' }, notiz: 'Rubinblende: rot und durchscheinend, sehr begehrt.' },
+      { name: 'Marmatit', farben: { a: '#5e525a', b: '#33292e', c: '#1c1619', o: '#000000', dunkel: true, wange: 'rgba(255, 140, 160, 0.35)' }, notiz: 'Marmatit: eisenreich und fast schwarz.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 36, 64, 90, f);
+
+      // Tetraeder
+      flaeche(ctx, [[50, 12], [15, 86], [50, 86]], f.a);
+      flaeche(ctx, [[50, 12], [50, 86], [85, 86]], f.b);
+      flaeche(ctx, [[15, 86], [50, 86], [85, 86], [50, 91]], f.c);
+      flaeche(ctx, [[44, 26], [47, 24], [30, 70], [27, 70]], 'rgba(255, 255, 255, 0.4)');
+      kanten(ctx, [[[50, 12], [50, 86]]]);
+      umriss(ctx, [[50, 12], [85, 86], [50, 91], [15, 86]], f.o);
+
+      // Der Schelm zwinkert
+      gesicht(ctx, 50, 66, 0.95, f, Object.assign({}, o, { zwinkern: true }));
+    },
+    spezial: { label: 'Reiben', typ: 'funken', farbe: '#ff9a3a', punkte: [[24, 22], [76, 18], [12, 56], [88, 50], [16, 8], [84, 6]], text: 'Manche Sphalerite leuchten beim Reiben orange auf (Tribolumineszenz).' },
+    wesen: 'Ein Schelm. „Sphaleros“ heißt auf Griechisch trügerisch: Bergleute hielten es für Bleierz und bekamen kein Blei – daher auch der Name „Blende“.',
+    pflege: 'Spielt gern Verstecken und schummelt beim Raten. Sein Rivale ist Galenitchi.',
+    fehler: 'Zu viel Eisen im Futter, und es wird zum dunklen Marmatit.'
+  },
+  {
+    id: 'galenit', name: 'Galenitchi', mineral: 'Galenit (Bleiglanz)', formel: 'PbS', system: 'kubisch', mohs: '2,5',
+    schale: ['#eef0f4', '#9aa0ac'],
+    varianten: [
+      { name: 'Frisch', farben: { hell: '#f6f8fb', a: '#c9ced8', b: '#9ea5b2', c: '#6f7684', o: '#262930' }, notiz: 'Frisch: bleigrauer, starker Metallglanz.' },
+      { name: 'Angelaufen', farben: { hell: '#c2c5cc', a: '#9a9ea8', b: '#7c808b', c: '#575b65', o: '#22252b' }, notiz: 'Angelaufen: an der Luft wird der Metallglanz mit der Zeit matt.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 34, 58, 90, f);
+      wuerfel(ctx, f);
+
+      // Spaltwuerfel angedeutet
+      [[[37, 40], [37, 86]], [[53, 40], [53, 86]], [[22, 55], [68, 55]], [[22, 70], [68, 70]]].forEach(l => linie(ctx, l, 'rgba(0, 0, 0, 0.1)', 0.8));
+      flaeche(ctx, [[25, 44], [28, 44], [28, 82], [25, 82]], 'rgba(255, 255, 255, 0.55)');
+      wuerfelUmriss(ctx, f);
+      gesicht(ctx, 45, 63, 1, f, o);
+    },
+    spezial: { label: 'Anheben', typ: 'schwer', text: 'Uff! Bleiglanz ist fast siebeneinhalbmal so schwer wie Wasser. Hüpfen ist gerade nicht drin.' },
+    wesen: 'Ein silberner, schwerer Würfel – das wichtigste Bleierz. Der ewige Rivale von Sphalitchi, mit dem ihn die Bergleute ständig verwechselt haben.',
+    pflege: 'Bricht man ihn, zerfällt er in lauter kleine Würfel (perfekte Spaltbarkeit). Also bitte nicht fallen lassen.',
+    fehler: 'Bleibt er zu lange an der Luft liegen, läuft er an und wird matt.'
+  },
+  {
+    id: 'pyrit', name: 'Pyritchi', mineral: 'Pyrit', formel: 'FeS₂', system: 'kubisch', mohs: '6–6,5',
+    schale: ['#fff2b8', '#e2bc4c'],
+    varianten: [
+      { name: 'Frisch', farben: { hell: '#fff5bc', a: '#f6d564', b: '#dcae36', c: '#a87e18', ohr: '#ffc4d2', o: '#4e3a0c' }, notiz: 'Frisch: messinggelb, mit feinen Streifen auf den Würfelflächen.' },
+      { name: 'Pyritzerfall', farben: { hell: '#e6e6de', a: '#c6c6ba', b: '#a4a496', c: '#7c7c70', ohr: '#efe6e4', o: '#444440', ausbluehung: true }, notiz: 'Pyritzerfall: zu feucht gelagert, grau und weiß ausgeblüht.' }
+    ],
+    male: (ctx, f, o) => {
+
+      // Katzenohren hinter dem Wuerfel
+      flaeche(ctx, [[28, 36], [32, 16], [46, 32]], f.b);
+      umriss(ctx, [[28, 36], [32, 16], [46, 32]], f.o, 2);
+      flaeche(ctx, [[32, 32], [33.5, 21.5], [41, 31]], f.ohr);
+      flaeche(ctx, [[60, 32], [71, 15], [76, 32]], f.b);
+      umriss(ctx, [[60, 32], [71, 15], [76, 32]], f.o, 2);
+      flaeche(ctx, [[64, 31], [70.5, 20.5], [73, 31]], f.ohr);
+
+      fuesse(ctx, 34, 58, 90, f);
+      wuerfel(ctx, f);
+
+      // Streifung: auf benachbarten Flaechen quer zueinander
+      for (let y = 45; y <= 83; y += 5) linie(ctx, [[23, y], [67, y]], 'rgba(110, 70, 0, 0.2)', 0.8);
+      for (let t = 8; t <= 44; t += 7) linie(ctx, [[22 + t, 40], [32 + t, 30]], 'rgba(110, 70, 0, 0.18)', 0.7);
+      for (let x = 70; x <= 76; x += 3) linie(ctx, [[x, 40 - (x - 68) + 2], [x, 86 - (x - 68) - 2]], 'rgba(60, 40, 0, 0.2)', 0.7);
+
+      // Ausbluehungen beim Pyritzerfall
+      if (f.ausbluehung) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        [[28, 48, 2.2], [62, 80, 2.6], [74, 52, 1.8], [36, 82, 1.6], [58, 34, 1.8]].forEach(([x, y, r]) => { oval(ctx, x, y, r, r * 0.8); ctx.fill(); });
+      }
+
+      flaeche(ctx, [[25, 44], [28, 44], [28, 82], [25, 82]], 'rgba(255, 255, 255, 0.5)');
+      wuerfelUmriss(ctx, f);
+
+      // Schnurrhaare
+      [[[24, 66], [12, 63]], [[24, 69], [11, 69]], [[24, 72], [12, 75]], [[57, 66], [66, 63]], [[57, 69], [66, 69]], [[57, 72], [66, 75]]].forEach(l => linie(ctx, l, f.o, 1));
+      gesicht(ctx, 45, 63, 1, f, o);
+    },
+    spezial: { label: 'Polieren', typ: 'funken', farbe: '#ffffff', punkte: [[12, 30], [88, 36], [50, 6], [8, 72], [92, 80]], text: 'Glänzt wie Gold – ist aber Eisensulfid.' },
+    wesen: 'Katzengold, darum die Katzenohren. Ein Würfel mit gestreiften Flächen, der gern so tut, als wäre er wertvoller.',
+    pflege: 'Trocken halten! Feuchte Luft verträgt Pyrit gar nicht.',
+    fehler: 'Bei zu viel Feuchtigkeit beginnt der Pyritzerfall: Es wird grau und blüht weiß aus.'
+  },
+  {
+    id: 'staurolith', name: 'Staurotchi', mineral: 'Staurolith', formel: '(Fe,Mg)₂Al₉Si₄O₂₃(OH)', system: 'monoklin', mohs: '7–7,5',
+    schale: ['#e8cfb4', '#a86a3c'],
+    varianten: [
+      { name: 'Kreuz 90°', form: 'kreuz', farben: { a: '#d6996a', b: '#a86a3c', c: '#7a4824', o: '#33200f' }, notiz: 'Rechtwinkliges Kreuz: das seltenere und begehrtere „Feenkreuz“.' },
+      { name: 'Schräg 60°', form: 'schraeg', farben: { a: '#d6996a', b: '#a86a3c', c: '#7a4824', o: '#33200f' }, notiz: 'Schräges X im 60°-Winkel: die häufigere Zwillingsform.' }
+    ],
+    male: (ctx, f, o) => {
+
+      // Zwei verwachsene Saeulen
+      const balken = winkel => {
+        ctx.save();
+        ctx.translate(50, 52);
+        ctx.rotate(winkel);
+        rundRechteck(ctx, -12, -40, 24, 80, 5);
+        ctx.fillStyle = verlauf(ctx, -12, 0, 12, 0, [f.a, f.b, f.c]);
+        ctx.fill();
+        flaeche(ctx, [[-8, -34], [-5.5, -34], [-5.5, 34], [-8, 34]], 'rgba(255, 255, 255, 0.3)');
+        rundRechteck(ctx, -12, -40, 24, 80, 5);
+        ctx.lineWidth = 2.4;
+        ctx.strokeStyle = f.o;
+        ctx.stroke();
+        ctx.restore();
+      };
+
+      if (o.form === 'schraeg') {
+        balken(-Math.PI / 6);
+        balken(Math.PI / 6);
+      } else {
+        balken(Math.PI / 2);
+        balken(0);
+      }
+
+      gesicht(ctx, 50, 52, 0.78, f, o);
+    },
+    spezial: { label: 'Glück', typ: 'funken', farbe: '#ffd23a', punkte: [[14, 14], [86, 14], [14, 88], [86, 88]], text: 'Feenkreuze galten früher als Glücksbringer und wurden als Amulett getragen.' },
+    wesen: 'Ein kleiner Glücksbringer in Kreuzform. Staurolith-Kristalle wachsen oft paarweise durcheinander und bilden so Kreuze – „stauros“ heißt Kreuz.',
+    pflege: 'Kommt fast immer im Glimmerschiefer vor. Ein Stück Schiefer als Bett macht es glücklich.',
+    fehler: 'Ohne Zwilling ist es nur eine einfache braune Säule – und ziemlich einsam.'
+  },
+  {
+    id: 'pyromorphit', name: 'Pyromorphitchi', mineral: 'Pyromorphit', formel: 'Pb₅(PO₄)₃Cl', system: 'hexagonal', mohs: '3,5–4',
+    schale: ['#d6f0b0', '#6fb83a'],
+    varianten: [
+      { name: 'Grünbleierz', farben: { a: '#d2f29a', b: '#86c64a', c: '#4e8a2a', o: '#1c4418' }, notiz: 'Grün: der alte Bergmannsname war Grünbleierz.' },
+      { name: 'Gelb', farben: { a: '#fff6bc', b: '#ecd050', c: '#b8961a', o: '#544410' }, notiz: 'Gelb: ebenfalls häufig, oft zusammen mit grünen Fässchen.' },
+      { name: 'Braunbleierz', farben: { a: '#e8c298', b: '#b0804a', c: '#76522a', o: '#36220e' }, notiz: 'Braun: das Braunbleierz der alten Bergleute.' }
+    ],
+    male: maleFaesschen,
+    spezial: { label: 'Erhitzen', typ: 'funken', farbe: '#ff7a2a', punkte: [[18, 16], [82, 16], [10, 58], [90, 58], [50, 8]], text: 'Pyromorphit heißt „Feuergestalt“: Geschmolzen erstarrt es beim Abkühlen wieder mit Kristallflächen.' },
+    wesen: 'Ein kleines grünes Fässchen mit hohlen Enden. Gehört zur Apatit-Gruppe und hat einen roten Zwilling: Vanaditchi.',
+    pflege: 'Steht am liebsten in Gruppen auf Brauneisen oder Quarz, wie in alten Bleigruben.',
+    fehler: 'Wird es zu oft geschmolzen, hat es irgendwann keine Lust mehr auf Kristallform.'
+  },
+  {
+    id: 'vanadinit', name: 'Vanaditchi', mineral: 'Vanadinit', formel: 'Pb₅(VO₄)₃Cl', system: 'hexagonal', mohs: '3–4',
+    schale: ['#ffcbb0', '#e03a1a'],
+    varianten: [
+      { name: 'Rot', farben: { a: '#ffa478', b: '#e2441e', c: '#a01e0c', o: '#420c06', wange: 'rgba(255, 220, 200, 0.6)' }, notiz: 'Rot: berühmt aus Marokko, wo es leuchtend rote Fässchen gibt.' },
+      { name: 'Nachgedunkelt', farben: { a: '#c45a38', b: '#8e2c16', c: '#5a160a', o: '#2a0804', wange: 'rgba(255, 200, 190, 0.45)' }, notiz: 'Nachgedunkelt: zu viel Licht abbekommen.' }
+    ],
+    male: maleFaesschen,
+    spezial: { label: 'Sonnenbad', typ: 'zuVariante', ziel: 1, text: 'Zu lange in der Sonne! Vanadinit kann im Licht nachdunkeln.' },
+    wesen: 'Der rote Zwilling von Pyromorphitchi: dieselbe Fässchenform, nur steckt statt Phosphor Vanadium drin.',
+    pflege: 'Im Schatten aufbewahren. Mit Pyromorphitchi daneben ist es am glücklichsten.',
+    fehler: 'Zu viel Licht, und das leuchtende Rot dunkelt nach.'
+  },
+  {
+    id: 'azurit', name: 'Azuritchi', mineral: 'Azurit', formel: 'Cu₃(CO₃)₂(OH)₂', system: 'monoklin', mohs: '3,5–4',
+    schale: ['#c8d6ff', '#2a4fd0'],
+    varianten: [
+      { name: 'Azurit', form: 'azurit', farben: { a: '#8ab0ff', b: '#3a62e0', c: '#1a3496', o: '#0a1a50', iris: 'rgba(150, 200, 255, 0.7)' }, notiz: 'Azurit: tiefes Kupferblau.' },
+      { name: 'Malachit', form: 'malachit', mineral: 'Malachit', formel: 'Cu₂CO₃(OH)₂', farben: { a: '#7ee6ac', b: '#22995a', c: '#0f6a3a', o: '#0c3320' }, notiz: 'Malachit: grün und gebändert, wie Jahresringe.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      if (o.form === 'malachit') {
+
+        // Nierige Knolle: erst dicker Umriss aller Kugeln, dann Fuellung und Baender
+        const kugeln = [[33, 40, 13], [65, 37, 15], [50, 62, 27]];
+        ctx.strokeStyle = f.o;
+        ctx.lineWidth = 4.6;
+        kugeln.forEach(([x, y, r]) => { oval(ctx, x, y, r, r); ctx.stroke(); });
+
+        kugeln.forEach(([x, y, r]) => {
+          oval(ctx, x, y, r, r);
+          ctx.fillStyle = f.b;
+          ctx.fill();
+          ctx.save();
+          oval(ctx, x, y, r, r);
+          ctx.clip();
+          for (let rr = r - 3; rr > 2; rr -= 5) {
+            oval(ctx, x, y, rr, rr);
+            ctx.strokeStyle = f.a;
+            ctx.lineWidth = 2.2;
+            ctx.stroke();
+          }
+          ctx.restore();
+        });
+
+        oval(ctx, 40, 49, 5, 3);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.fill();
+        gesicht(ctx, 50, 64, 1, f, o);
+        return;
+      }
+
+      // Facettierter Azurit-Kristall
+      const aussen = [[50, 20], [72, 29], [81, 52], [73, 80], [50, 89], [27, 80], [19, 52], [28, 29]];
+      const innen = [[50, 33], [64, 40], [69, 56], [62, 73], [50, 78], [38, 73], [31, 56], [36, 40]];
+      pfad(ctx, aussen);
+      ctx.fillStyle = verlauf(ctx, 20, 20, 80, 90, [f.a, f.b, f.c]);
+      ctx.fill();
+      flaeche(ctx, innen, 'rgba(255, 255, 255, 0.14)');
+      kanten(ctx, aussen.map((p, k) => [p, innen[k]]).concat([innen.concat([innen[0]])]));
+      flaeche(ctx, [[34, 36], [42, 30], [44, 33], [36, 40]], 'rgba(255, 255, 255, 0.5)');
+      umriss(ctx, aussen, f.o);
+      gesicht(ctx, 50, 58, 1, f, o);
+    },
+    spezial: { label: 'Altern', typ: 'zuVariante', ziel: 1, text: 'Mit Wasser und Zeit wird Azurit zu Malachit – oft bleibt die Form dabei erhalten (Pseudomorphose).' },
+    wesen: 'Ein tiefblaues Kupferwesen. Wird mit der Zeit grün, denn in der Natur wandelt sich Azurit gern in Malachit um.',
+    pflege: 'Trocken halten, wenn es blau bleiben soll.',
+    fehler: 'Zu viel Feuchtigkeit, und aus dem blauen Azuritchi wird ein grün gestreifter Malachit.'
+  },
+  {
+    id: 'calcit', name: 'Calcitchi', mineral: 'Calcit', formel: 'CaCO₃', system: 'trigonal', mohs: '3',
+    schale: ['#f2f6fa', '#b8c6d6'],
+    varianten: [
+      { name: 'Doppelspat', farben: { hell: '#ffffff', a: '#f2f6fa', b: '#dbe3ee', c: '#b8c6d8', o: '#56677e' }, notiz: 'Doppelspat: glasklarer Calcit, auch Islandspat genannt.' },
+      { name: 'Honigcalcit', farben: { hell: '#fff2d6', a: '#ffd598', b: '#f2ac52', c: '#c47e26', o: '#6a400e' }, notiz: 'Honigcalcit: warm-orange gefärbt.' },
+      { name: 'Kobaltocalcit', farben: { hell: '#fff2f8', a: '#ffcce2', b: '#f7a0c8', c: '#d26a9c', o: '#6e244a' }, notiz: 'Kobaltocalcit: rosa durch Kobalt.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 30, 50, 91, f);
+
+      // Rhomboeder
+      flaeche(ctx, [[30, 40], [44, 28], [80, 28], [66, 40]], f.hell);
+      flaeche(ctx, [[66, 40], [80, 28], [70, 76], [56, 88]], f.c);
+      pfad(ctx, [[30, 40], [66, 40], [56, 88], [20, 88]]);
+      ctx.fillStyle = verlauf(ctx, 20, 40, 66, 88, [f.a, f.b]);
+      ctx.fill();
+
+      // Spaltrisse und Glanz
+      linie(ctx, [[50, 42], [40, 86]], 'rgba(255, 255, 255, 0.5)', 0.8);
+      linie(ctx, [[27, 60], [61, 60]], 'rgba(255, 255, 255, 0.35)', 0.8);
+      flaeche(ctx, [[31, 44], [34, 44], [25, 84], [22, 84]], 'rgba(255, 255, 255, 0.55)');
+      umriss(ctx, [[30, 40], [44, 28], [80, 28], [70, 76], [56, 88], [20, 88]], f.o);
+      linie(ctx, [[30, 40], [66, 40], [80, 28]], f.o, 1.3);
+      linie(ctx, [[66, 40], [56, 88]], f.o, 1.3);
+      gesicht(ctx, 43, 63, 1, f, o);
+    },
+    spezial: { label: 'Durchschauen', typ: 'doppelt', text: 'Doppelbrechung: Durch klaren Calcit sieht man alles doppelt.', textAus: 'Wieder nur einmal da.' },
+    wesen: 'Ein schiefes Kästchen (Rhomboeder). Ist auf der Mohs-Skala das Maß für Härte 3 – mit einer Kupfermünze kann man es gerade so ritzen.',
+    pflege: 'Bloß keinen Essig! Calcit braust in Säure auf und löst sich auf.',
+    fehler: 'Ein Spritzer Säure, und es blubbert davon.'
+  },
+  {
+    id: 'dolomit', name: 'Dolomitchi', mineral: 'Dolomit', formel: 'CaMg(CO₃)₂', system: 'trigonal', mohs: '3,5–4',
+    schale: ['#fbeff0', '#d8b8bc'],
+    varianten: [
+      { name: 'Weiß', farben: { hell: '#ffffff', a: '#f8f4f2', b: '#e6dcd8', c: '#c4b4ae', o: '#5e504a' }, notiz: 'Weiß: der typische Dolomit mit Perlmuttglanz.' },
+      { name: 'Rosa', farben: { hell: '#fff4f6', a: '#fbdde4', b: '#f2bccb', c: '#d293a6', o: '#6a3a48' }, notiz: 'Rosa: zart gefärbte Sattelkristalle.' },
+      { name: 'Braun', farben: { hell: '#f6e6d2', a: '#e2c49e', b: '#c49a6a', c: '#946c42', o: '#4a3218' }, notiz: 'Braun: eisenhaltig, auf dem Weg zum Ankerit.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 30, 50, 91, f);
+
+      // Rhomboeder wie beim Cousin Calcit
+      flaeche(ctx, [[30, 40], [44, 28], [80, 28], [66, 40]], f.hell);
+      flaeche(ctx, [[66, 40], [80, 28], [70, 76], [56, 88]], f.c);
+      pfad(ctx, [[30, 40], [66, 40], [56, 88], [20, 88]]);
+      ctx.fillStyle = verlauf(ctx, 20, 40, 66, 88, [f.a, f.b]);
+      ctx.fill();
+
+      // Gekruemmte Sattelstufen
+      [48, 58, 68, 78].forEach((y, k) => {
+        const versatz = (y - 40) / 48 * 10;
+        ctx.beginPath();
+        ctx.moveTo(30 - versatz, y);
+        ctx.quadraticCurveTo(46 - versatz, y + 4, 66 - versatz, y);
+        ctx.lineWidth = 0.9;
+        ctx.strokeStyle = k % 2 ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.08)';
+        ctx.stroke();
+      });
+
+      // Perlmuttglanz
+      ctx.save();
+      ctx.translate(40, 50);
+      ctx.rotate(-0.25);
+      oval(ctx, 0, 0, 9, 2.6);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.fill();
+      ctx.restore();
+
+      umriss(ctx, [[30, 40], [44, 28], [80, 28], [70, 76], [56, 88], [20, 88]], f.o);
+      linie(ctx, [[30, 40], [66, 40], [80, 28]], f.o, 1.3);
+      linie(ctx, [[66, 40], [56, 88]], f.o, 1.3);
+      gesicht(ctx, 43, 64, 1, f, o);
+    },
+    spezial: { label: 'Säuretest', typ: 'funken', farbe: '#ffffff', punkte: [[18, 30], [86, 20], [12, 70], [88, 60]], text: 'Nur ein paar Bläschen: In kalter, verdünnter Salzsäure braust Dolomit kaum – ganz anders als Calcitchi.' },
+    wesen: 'Der Cousin von Calcitchi, mit Magnesium im Gepäck. Seine Kristalle sind oft sattelförmig gekrümmt, und ganze Gebirge bestehen aus ihm – die Dolomiten.',
+    pflege: 'Verträgt Säure viel besser als Calcit. Benannt ist es nach dem Geologen Déodat de Dolomieu.',
+    fehler: 'Zu Pulver zerrieben braust es dann doch – also bitte nicht zerbröseln.'
+  },
+  {
+    id: 'torbernit', name: 'Torbernitchi', mineral: 'Torbernit', formel: 'Cu(UO₂)₂(PO₄)₂ · 8–12H₂O', system: 'tetragonal', mohs: '2–2,5',
+    schale: ['#c8f4cc', '#3fbf62'],
+    varianten: [
+      { name: 'Torbernit', farben: { a: '#a8f2b0', b: '#2fbf5a', c: '#178a3a', o: '#0c3a1a' }, notiz: 'Torbernit: smaragdgrüne, quadratische Täfelchen.' },
+      { name: 'Metatorbernit', farben: { a: '#d0e2ca', b: '#86ac7e', c: '#5a7c54', o: '#2c3e2a' }, notiz: 'Metatorbernit: ausgetrocknet und matter. Hat das Trinken vergessen.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 38, 62, 90, f);
+
+      // Plattenstapel wie bei Autunit
+      flaeche(ctx, [[72, 42], [80, 35], [80, 80], [72, 87]], f.c);
+      flaeche(ctx, [[26, 42], [34, 35], [80, 35], [72, 42]], f.a);
+      pfad(ctx, [[26, 42], [72, 42], [72, 87], [26, 87]]);
+      ctx.fillStyle = verlauf(ctx, 26, 42, 72, 87, [f.a, f.b]);
+      ctx.fill();
+      [54, 65, 76].forEach(y => linie(ctx, [[26, y], [72, y], [80, y - 7]], f.c, 1));
+      flaeche(ctx, [[29, 46], [32, 46], [32, 82], [29, 82]], 'rgba(255, 255, 255, 0.45)');
+      umriss(ctx, [[26, 42], [34, 35], [80, 35], [80, 80], [72, 87], [26, 87]], f.o);
+      linie(ctx, [[26, 42], [72, 42], [80, 35]], f.o, 1.3);
+      linie(ctx, [[72, 42], [72, 87]], f.o, 1.3);
+
+      // Zwei schraege Taefelchen als Huetchen
+      [[44, 30, 0.22], [58, 27, -0.18]].forEach(([x, y, w]) => {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(w);
+        flaeche(ctx, [[-10, -2.5], [-7, -6], [11, -6], [8, -2.5]], f.a);
+        flaeche(ctx, [[-10, -2.5], [8, -2.5], [8, 2.5], [-10, 2.5]], f.b);
+        flaeche(ctx, [[8, -2.5], [11, -6], [11, -1], [8, 2.5]], f.c);
+        umriss(ctx, [[-10, -2.5], [-7, -6], [11, -6], [11, -1], [8, 2.5], [-10, 2.5]], f.o, 1.6);
+        ctx.restore();
+      });
+
+      gesicht(ctx, 49, 62, 1, f, o);
+    },
+    spezial: { label: 'UV-Lampe', typ: 'text', text: 'Nichts passiert! Anders als Autunit leuchtet Torbernit nicht – das Kupfer löscht die Fluoreszenz.' },
+    wesen: 'Der grüne Cousin von Autunitchi: dieselben quadratischen Täfelchen, nur steckt Kupfer statt Calcium drin. Benannt nach dem Chemiker Torbern Bergman.',
+    pflege: 'Wie Autunit regelmäßig trinken lassen. Das echte Mineral ist radioaktiv – Abstand halten und nicht in der Wohnung offen herumstehen lassen.',
+    fehler: 'Ausgetrocknet wird es zum Metatorbernit. Bei echten Sammlungsstücken passiert das sogar ziemlich oft.'
+  },
+  {
+    id: 'cuprosklodowskit', name: 'Cuprotchi', mineral: 'Cuprosklodowskit', formel: 'Cu(UO₂)₂(SiO₃OH)₂ · 6H₂O', system: 'triklin', mohs: '4',
+    schale: ['#d4f4d8', '#46b86a'],
+    varianten: [
+      { name: 'Grasgrün', farben: { a: '#b6f0a8', b: '#5cc85a', c: '#2e8a36', o: '#123c18' }, notiz: 'Grasgrün: feine Nadelbüschel, berühmt aus Kolwezi im Kongo.' },
+      { name: 'Smaragdgrün', farben: { a: '#8ae8c0', b: '#22b07a', c: '#127a50', o: '#0a3424' }, notiz: 'Smaragdgrün: dichte, samtige Büschel.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 42, 58, 90, f);
+
+      // Nadelbueschel als Frisur: erst alle Umrisse, dann die Nadeln
+      const nadeln = [];
+      for (let k = 0; k <= 22; k++) {
+        const w = -Math.PI * (0.08 + 0.84 * k / 22);
+        const laenge = 32 + (k % 3) * 5;
+        nadeln.push([50 + Math.cos(w) * laenge, 64 + Math.sin(w) * laenge, k]);
+      }
+      nadeln.forEach(([x, y]) => linie(ctx, [[50, 64], [x, y]], f.o, 3.4));
+      nadeln.forEach(([x, y, k]) => linie(ctx, [[50, 64], [x, y]], k % 2 ? f.a : f.b, 1.8));
+
+      // Runder Koerper
+      oval(ctx, 50, 70, 20, 17);
+      ctx.fillStyle = radial(ctx, 43, 63, 2, 50, 70, 21, [f.a, f.b, f.c]);
+      ctx.fill();
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+      gesicht(ctx, 50, 71, 0.9, f, o);
+    },
+    spezial: { label: 'Namenspatin', typ: 'funken', farbe: '#d8ff7a', punkte: [[14, 20], [86, 20], [8, 60], [92, 60], [50, 4]], text: 'Benannt nach Marie Skłodowska-Curie, die die Radioaktivität erforscht hat. „Cupro“ steht für das Kupfer.' },
+    wesen: 'Ein grünes Wesen mit wilder Nadelfrisur. Entsteht, wenn Uraninit im Gestein verwittert und Kupfer dazukommt.',
+    pflege: 'Die Nadeln sind haarfein und brechen schon beim Anpusten ab. Radioaktiv wie seine Verwandten.',
+    fehler: 'Einmal zu kräftig gekämmt, und die schöne Frisur ist ab.'
+  },
+  {
+    id: 'uraninit', name: 'Uraninitchi', mineral: 'Uraninit', formel: 'UO₂', system: 'kubisch', mohs: '5–6',
+    schale: ['#c8c6c2', '#4a4642'],
+    varianten: [
+      { name: 'Kristall', form: 'kristall', farben: { a: '#6a6560', b: '#3a3632', c: '#1a1816', o: '#000000', dunkel: true, wange: 'rgba(255, 140, 160, 0.35)', iris: 'rgba(190, 255, 80, 0.55)' }, notiz: 'Kristall: seltene, pechschwarze Oktaeder und Würfel.' },
+      { name: 'Pechblende', form: 'pechblende', farben: { a: '#5e5a54', b: '#34302c', c: '#161412', o: '#000000', dunkel: true, wange: 'rgba(255, 140, 160, 0.35)', iris: 'rgba(190, 255, 80, 0.55)' }, notiz: 'Pechblende: die nierige, pechglänzende Form – so kennt man ihn aus dem Erzgebirge.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      if (o.form === 'pechblende') {
+
+        // Nierige Knolle mit Pechglanz
+        const kugeln = [[34, 44, 14], [66, 42, 15], [50, 64, 26]];
+        ctx.strokeStyle = f.o;
+        ctx.lineWidth = 4.6;
+        kugeln.forEach(([x, y, r]) => { oval(ctx, x, y, r, r); ctx.stroke(); });
+        kugeln.forEach(([x, y, r]) => {
+          oval(ctx, x, y, r, r);
+          ctx.fillStyle = radial(ctx, x - r * 0.35, y - r * 0.4, 1, x, y, r, [f.a, f.b, f.c]);
+          ctx.fill();
+          oval(ctx, x - r * 0.35, y - r * 0.45, r * 0.28, r * 0.14);
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+          ctx.fill();
+        });
+        gesicht(ctx, 50, 66, 1, f, o);
+        return;
+      }
+
+      // Oktaeder von vorn
+      flaeche(ctx, [[50, 14], [18, 52], [50, 52]], f.a);
+      flaeche(ctx, [[50, 14], [50, 52], [82, 52]], f.b);
+      flaeche(ctx, [[18, 52], [50, 90], [50, 52]], f.b);
+      flaeche(ctx, [[50, 52], [50, 90], [82, 52]], f.c);
+      flaeche(ctx, [[44, 22], [47, 21], [26, 50], [23, 50]], 'rgba(255, 255, 255, 0.3)');
+      kanten(ctx, [[[50, 14], [50, 90]], [[18, 52], [82, 52]]]);
+      umriss(ctx, [[50, 14], [82, 52], [50, 90], [18, 52]], f.o);
+      gesicht(ctx, 50, 56, 1, f, o);
+    },
+    spezial: { label: 'Geigerzähler', typ: 'funken', farbe: '#c8ff3a', punkte: [[12, 14], [88, 18], [8, 50], [92, 46], [14, 84], [86, 82]], text: 'Tick-tick-tick! Uraninit ist das Uranerz schlechthin – bei echten Stücken rattert der Zähler richtig.' },
+    wesen: 'Der Urahn der Uranfamilie. Wenn Uraninit im Gestein verwittert, entstehen aus ihm die bunten Kinder: Autunit, Torbernit und Cuprosklodowskit.',
+    pflege: 'Aus Pechblende aus St. Joachimsthal im Erzgebirge haben Marie und Pierre Curie Radium und Polonium gewonnen.',
+    fehler: 'Mit Wasser und Luft verwittert er und bekommt gelbe und grüne Kinder. Zurück geht es nicht.'
+  },
+  {
+    id: 'zirkon', name: 'Zirkitchi', mineral: 'Zirkon', formel: 'ZrSiO₄', system: 'tetragonal', mohs: '7,5',
+    schale: ['#ffe0c8', '#d8743a'],
+    varianten: [
+      { name: 'Hyazinth', farben: { hell: '#ffd8bc', a: '#f49a62', b: '#c8582a', c: '#8a3416', o: '#4a1a08' }, notiz: 'Hyazinth: der rotbraune bis orange Zirkon.' },
+      { name: 'Braun', farben: { hell: '#ecd4ba', a: '#bc9064', b: '#8a5e36', c: '#5e3c1e', o: '#2e1c0c' }, notiz: 'Braun: die häufigste natürliche Farbe.' },
+      { name: 'Blau', farben: { hell: '#e4f8ff', a: '#90dcf6', b: '#3aa8d8', c: '#1a6e9e', o: '#0c3450' }, notiz: 'Blau: meist durch Brennen brauner Zirkone entstanden.' },
+      { name: 'Farblos', farben: { hell: '#ffffff', a: '#f2f4f8', b: '#d6dce6', c: '#aab4c4', o: '#4e5a6a' }, notiz: 'Farblos: früher als Diamant-Ersatz beliebt, der „Matara-Diamant“.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      // Vierseitige Saeule mit Pyramiden oben und unten
+      flaeche(ctx, [[50, 8], [32, 28], [50, 32]], f.hell);
+      flaeche(ctx, [[50, 8], [50, 32], [68, 28]], f.a);
+      flaeche(ctx, [[32, 28], [50, 32], [50, 68], [32, 72]], f.a);
+      flaeche(ctx, [[50, 32], [68, 28], [68, 72], [50, 68]], f.b);
+      flaeche(ctx, [[32, 72], [50, 68], [50, 92]], f.b);
+      flaeche(ctx, [[50, 68], [68, 72], [50, 92]], f.c);
+      flaeche(ctx, [[35, 33], [38, 33.5], [38, 68], [35, 69]], 'rgba(255, 255, 255, 0.5)');
+      kanten(ctx, [[[32, 28], [50, 32], [68, 28]], [[32, 72], [50, 68], [68, 72]], [[50, 8], [50, 92]]]);
+      umriss(ctx, [[50, 8], [68, 28], [68, 72], [50, 92], [32, 72], [32, 28]], f.o);
+      gesicht(ctx, 50, 50, 0.9, f, o);
+
+      // Brille: der Aelteste der Runde
+      [-1, 1].forEach(seite => {
+        oval(ctx, 50 + seite * 8.1, 50, 5.6, 5.6);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = f.o;
+        ctx.stroke();
+      });
+      linie(ctx, [[47.6, 49], [52.4, 49]], f.o, 1);
+    },
+    spezial: { label: 'Alter', typ: 'funken', farbe: '#ffd23a', punkte: [[14, 16], [86, 16], [10, 60], [90, 60]], text: 'Manche Zirkone aus den Jack Hills in Australien sind rund 4,4 Milliarden Jahre alt – fast so alt wie die Erde selbst.' },
+    wesen: 'Der Älteste der Runde, darum die Brille. Zirkon ist so beständig, dass er Milliarden Jahre übersteht. Mit seinen Uranspuren datieren Geologen das Alter von Gesteinen.',
+    pflege: 'Pflegeleicht und hart (Mohs 7,5). Braucht vor allem Geduld und Zeit – sehr viel Zeit.',
+    fehler: 'Zu viel Hitze, und aus dem braunen Zirkon wird ein blauer. Bei Schmucksteinen macht man das absichtlich.'
+  },
+  {
+    id: 'apatit', name: 'Apatitchi', mineral: 'Apatit', formel: 'Ca₅(PO₄)₃(F,Cl,OH)', system: 'hexagonal', mohs: '5',
+    schale: ['#e6f6c0', '#9ccf4a'],
+    varianten: [
+      { name: 'Spargelstein', farben: { hell: '#f2fbd2', a: '#d8ef96', b: '#a8d454', c: '#76a42e', o: '#34501a' }, notiz: 'Spargelstein: gelbgrün – so hieß Apatit früher wegen seiner Farbe.' },
+      { name: 'Gelb', farben: { hell: '#fff8d0', a: '#fbe488', b: '#f0c63a', c: '#b8901a', o: '#5a440c' }, notiz: 'Gelb: kurze, klare Säulen, berühmt aus Durango in Mexiko.' },
+      { name: 'Neonblau', farben: { hell: '#dcfbff', a: '#7ae6f2', b: '#22c0d8', c: '#12869e', o: '#0a3a48' }, notiz: 'Neonblau: leuchtend blaugrüner Apatit, zum Beispiel aus Madagaskar.' },
+      { name: 'Violett', farben: { hell: '#f2e8ff', a: '#d4b8f6', b: '#a984e2', c: '#7856b4', o: '#34224e' }, notiz: 'Violett: selten und bei Sammlern sehr begehrt.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 41, 59, 89, f);
+
+      // Sechsseitige Saeule mit abgestumpfter Pyramide
+      flaeche(ctx, [[30, 40], [42, 46], [42, 88], [30, 82]], f.a);
+      flaeche(ctx, [[42, 46], [58, 46], [58, 88], [42, 88]], f.b);
+      flaeche(ctx, [[58, 46], [70, 40], [70, 82], [58, 88]], f.c);
+      flaeche(ctx, [[44, 24], [30, 40], [42, 46]], f.a);
+      flaeche(ctx, [[44, 24], [56, 24], [58, 46], [42, 46]], f.hell);
+      flaeche(ctx, [[56, 24], [58, 46], [70, 40]], f.c);
+      flaeche(ctx, [[33, 44], [36, 45.5], [36, 79], [33, 77.5]], 'rgba(255, 255, 255, 0.5)');
+      kanten(ctx, [[[42, 46], [42, 88]], [[58, 46], [58, 88]], [[30, 40], [42, 46], [58, 46], [70, 40]], [[42, 46], [44, 24]], [[58, 46], [56, 24]]]);
+      umriss(ctx, [[44, 24], [56, 24], [70, 40], [70, 82], [58, 88], [42, 88], [30, 82], [30, 40]], f.o);
+      gesicht(ctx, 50, 64, 1, f, o);
+    },
+    spezial: { label: 'Lächeln', typ: 'funken', farbe: '#ffffff', punkte: [[14, 20], [86, 18], [10, 62], [90, 66], [50, 10]], text: 'Strahlend! Dein Zahnschmelz besteht auch aus Apatit, genauer aus Hydroxylapatit.' },
+    wesen: 'Der Namensgeber der Apatit-Gruppe, zu der auch Pyromorphitchi und Vanaditchi gehören. „Apatao“ heißt täuschen – er wurde ständig mit Beryll und anderen verwechselt.',
+    pflege: 'Ist auf der Mohs-Skala das Maß für Härte 5: Ein Taschenmesser ritzt ihn gerade noch.',
+    fehler: 'Säure greift ihn an, genau wie Zahnschmelz. Also keine Cola und keine Zitrone.'
+  },
+  {
+    id: 'diamant', name: 'Diamantchi', mineral: 'Diamant', formel: 'C', system: 'kubisch', mohs: '10',
+    schale: ['#f4f8ff', '#b8c8e4'],
+    varianten: [
+      { name: 'Rohdiamant', form: 'oktaeder', farben: { hell: '#ffffff', a: '#f4f8ff', b: '#d8e4f4', c: '#aebed6', o: '#4a5a74', iris: 'rgba(140, 200, 255, 0.7)' }, notiz: 'Rohdiamant: In der Natur wächst Diamant meist als Oktaeder.' },
+      { name: 'Brillant', form: 'brillant', farben: { hell: '#ffffff', a: '#f4f8ff', b: '#d8e4f4', c: '#aebed6', o: '#4a5a74', iris: 'rgba(140, 200, 255, 0.7)' }, notiz: 'Brillant: der klassische Schliff mit 57 oder 58 Facetten.' },
+      { name: 'Gelb', form: 'brillant', farben: { hell: '#fffbe0', a: '#fff0a0', b: '#f6d84a', c: '#d4ac1a', o: '#6a520c' }, notiz: 'Gelb: Stickstoff im Kristallgitter färbt ihn kanariengelb.' },
+      { name: 'Blau', form: 'brillant', farben: { hell: '#eef6ff', a: '#b8d8ff', b: '#6aa4f0', c: '#3a6ec4', o: '#14306a' }, notiz: 'Blau: Bor färbt ihn blau – wie den berühmten Hope-Diamanten.' },
+      { name: 'Graphit', form: 'graphit', mineral: 'Graphit', system: 'hexagonal', mohs: '1–2', farben: { a: '#a4aab4', b: '#50545c', c: '#2a2c32', o: '#0e0f12', dunkel: true, wange: 'rgba(255, 150, 170, 0.35)' }, notiz: 'Graphit: derselbe Kohlenstoff, nur in Schichten – daraus sind Bleistiftminen.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 41, 59, 90, f);
+
+      // Graphit: Paket aus duennen Kohlenstofflagen
+      if (o.form === 'graphit') {
+        pfad(ctx, [[24, 46], [36, 54], [64, 54], [76, 46], [76, 80], [64, 88], [36, 88], [24, 80]]);
+        ctx.fillStyle = verlauf(ctx, 24, 0, 76, 0, [f.b, f.c, f.b]);
+        ctx.fill();
+        [62, 70, 78, 86].forEach(y => linie(ctx, [[24, y - 8], [36, y], [64, y], [76, y - 8]], 'rgba(255, 255, 255, 0.18)', 0.8));
+        flaeche(ctx, [[24, 46], [36, 38], [64, 38], [76, 46], [64, 54], [36, 54]], f.a);
+        flaeche(ctx, [[34, 44], [52, 41], [54, 43], [36, 46]], 'rgba(255, 255, 255, 0.45)');
+        umriss(ctx, [[24, 46], [36, 38], [64, 38], [76, 46], [76, 80], [64, 88], [36, 88], [24, 80]], f.o);
+        linie(ctx, [[24, 46], [36, 54], [64, 54], [76, 46]], f.o, 1.3);
+        gesicht(ctx, 50, 69, 1, f, o);
+        return;
+      }
+
+      // Rohdiamant als Oktaeder
+      if (o.form === 'oktaeder') {
+        flaeche(ctx, [[50, 14], [18, 52], [50, 52]], f.hell);
+        flaeche(ctx, [[50, 14], [50, 52], [82, 52]], f.b);
+        flaeche(ctx, [[18, 52], [50, 90], [50, 52]], f.a);
+        flaeche(ctx, [[50, 52], [50, 90], [82, 52]], f.c);
+        flaeche(ctx, [[44, 22], [47, 21], [26, 50], [23, 50]], 'rgba(255, 255, 255, 0.6)');
+        kanten(ctx, [[[50, 14], [50, 90]], [[18, 52], [82, 52]]]);
+        umriss(ctx, [[50, 14], [82, 52], [50, 90], [18, 52]], f.o);
+        gesicht(ctx, 50, 56, 1, f, o);
+        return;
+      }
+
+      // Brillant: Krone oben, Pavillon unten
+      pfad(ctx, [[22, 42], [38, 30], [62, 30], [78, 42]]);
+      ctx.fillStyle = verlauf(ctx, 0, 30, 0, 42, [f.hell, f.a]);
+      ctx.fill();
+      const rundiste = [22, 36, 50, 64, 78];
+      const pavillon = [f.c, f.a, f.b, f.c];
+      for (let k = 0; k < 4; k++) flaeche(ctx, [[rundiste[k], 42], [rundiste[k + 1], 42], [50, 88]], pavillon[k]);
+      flaeche(ctx, [[40, 32], [46, 32], [38, 41], [33, 41]], 'rgba(255, 255, 255, 0.7)');
+      kanten(ctx, [[[38, 30], [30, 42]], [[38, 30], [50, 42]], [[62, 30], [50, 42]], [[62, 30], [70, 42]]].concat(rundiste.map(x => [[x, 42], [50, 88]])));
+      linie(ctx, [[22, 42], [78, 42]], f.o, 1.3);
+      umriss(ctx, [[22, 42], [38, 30], [62, 30], [78, 42], [50, 88]], f.o);
+      gesicht(ctx, 50, 54, 0.9, f, o);
+    },
+    spezial: { label: 'Funkeln', typ: 'funken', farbe: ['#ff6a6a', '#ffd23a', '#6ae06a', '#5ab4ff', '#c88aff', '#ff9ad2'], punkte: [[14, 16], [86, 14], [8, 50], [92, 54], [16, 84], [84, 86]], text: 'Feuer! Diamant zerlegt Licht in Regenbogenfarben (Dispersion).' },
+    wesen: 'Das härteste Mineral der Welt, aus reinem Kohlenstoff. Wächst tief im Erdmantel unter riesigem Druck und kommt mit Vulkanschloten nach oben.',
+    pflege: 'Hart, aber nicht unzerbrechlich: Mit einem gezielten Schlag bricht er entlang seiner Spaltflächen.',
+    fehler: 'Ohne den hohen Druck wäre er eigentlich lieber Graphit. Bei Zimmertemperatur dauert die Umwandlung aber unvorstellbar lange.'
+  },
+  {
+    id: 'uranocircit', name: 'Uranocircitchi', mineral: 'Uranocircit', formel: 'Ba(UO₂)₂(PO₄)₂ · 10–12H₂O', system: 'tetragonal', mohs: '2–2,5',
+    schale: ['#f2f6b4', '#bccb4a'],
+    uvFarben: { a: '#eaff8a', b: '#b8ff3a', c: '#7ad81a', o: '#2a5a10', iris: 'rgba(190, 255, 80, 0.7)' },
+    varianten: [
+      { name: 'Uranocircit', farben: { a: '#eef59a', b: '#c8d84a', c: '#94a62a', o: '#4e5a14', feder: '#b08a5a' }, notiz: 'Uranocircit: gelbgrüne, quadratische Täfelchen.' },
+      { name: 'Meta-Uranocircit', farben: { a: '#eceed4', b: '#d0d2a4', c: '#a8aa78', o: '#66684a', feder: '#a89276' }, notiz: 'Meta-Uranocircit: ausgetrocknet und blass. Hat das Trinken vergessen.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 38, 62, 90, f);
+
+      // Falkenfeder als Hutschmuck (hinter dem Stapel)
+      ctx.save();
+      ctx.translate(60, 25);
+      ctx.rotate(0.5);
+      oval(ctx, 0, 0, 4, 11);
+      ctx.fillStyle = f.feder;
+      ctx.fill();
+      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+      linie(ctx, [[0, -10], [0, 12]], f.o, 1);
+      [-6, -2, 2, 6].forEach(y => {
+        linie(ctx, [[0, y], [-3.2, y - 2.5]], 'rgba(0, 0, 0, 0.25)', 0.7);
+        linie(ctx, [[0, y], [3.2, y - 2.5]], 'rgba(0, 0, 0, 0.25)', 0.7);
+      });
+      ctx.restore();
+
+      // Plattenstapel wie bei Autunit
+      flaeche(ctx, [[72, 42], [80, 35], [80, 80], [72, 87]], f.c);
+      flaeche(ctx, [[26, 42], [34, 35], [80, 35], [72, 42]], f.a);
+      pfad(ctx, [[26, 42], [72, 42], [72, 87], [26, 87]]);
+      ctx.fillStyle = verlauf(ctx, 26, 42, 72, 87, [f.a, f.b]);
+      ctx.fill();
+      [54, 65, 76].forEach(y => linie(ctx, [[26, y], [72, y], [80, y - 7]], f.c, 1));
+      umriss(ctx, [[26, 42], [34, 35], [80, 35], [80, 80], [72, 87], [26, 87]], f.o);
+      linie(ctx, [[26, 42], [72, 42], [80, 35]], f.o, 1.3);
+      linie(ctx, [[72, 42], [72, 87]], f.o, 1.3);
+      gesicht(ctx, 49, 62, 1, f, o);
+    },
+    spezial: { label: 'UV-Lampe', typ: 'uv', text: 'Unter UV-Licht leuchtet Uranocircit kräftig gelbgrün – ganz anders als Torbernitchi.', textAus: 'Lampe aus.' },
+    wesen: 'Der Barium-Cousin von Autunitchi und Torbernitchi. Der Name erinnert an den Falken („kirkos“): Entdeckt wurde er bei Falkenstein im Vogtland – darum die Falkenfeder.',
+    pflege: 'Ein echtes Sachsenkind. Wie seine Cousins radioaktiv und ziemlich durstig.',
+    fehler: 'Trocknet es aus, wird es zum blassen Meta-Uranocircit.'
+  },
+  {
+    id: 'erythrin', name: 'Erythrinchi', mineral: 'Erythrin', formel: 'Co₃(AsO₄)₂ · 8H₂O', system: 'monoklin', mohs: '1,5–2,5',
+    schale: ['#ffd8ea', '#d44c94'],
+    varianten: [
+      { name: 'Kobaltblüte', farben: { hell: '#ffe4f0', a: '#f48cc0', b: '#d44c94', c: '#a02a6a', o: '#4e0e30', wange: 'rgba(255, 230, 240, 0.6)' }, notiz: 'Kobaltblüte: rosa bis pfirsichrot durch Kobalt.' },
+      { name: 'Annabergit', mineral: 'Annabergit', formel: 'Ni₃(AsO₄)₂ · 8H₂O', farben: { hell: '#f0fae0', a: '#bfe88a', b: '#8cc850', c: '#5e9a2e', o: '#2a4a14' }, notiz: 'Annabergit: die grüne Nickelblüte, benannt nach Annaberg im Erzgebirge.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 42, 58, 90, f);
+
+      // Strahlige Kristallblaettchen wie eine Bluete
+      for (let k = 0; k < 10; k++) {
+        ctx.save();
+        ctx.translate(50, 58);
+        ctx.rotate(k / 10 * Math.PI * 2 - Math.PI / 2);
+        ctx.beginPath();
+        ctx.moveTo(14, 0);
+        ctx.quadraticCurveTo(26, -6, 38, 0);
+        ctx.quadraticCurveTo(26, 6, 14, 0);
+        ctx.closePath();
+        ctx.fillStyle = k % 2 ? f.a : f.b;
+        ctx.fill();
+        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = f.o;
+        ctx.stroke();
+        linie(ctx, [[16, 0], [35, 0]], 'rgba(255, 255, 255, 0.4)', 0.7);
+        ctx.restore();
+      }
+
+      // Bluetenmitte mit Gesicht
+      oval(ctx, 50, 58, 19, 19);
+      ctx.fillStyle = radial(ctx, 44, 51, 2, 50, 58, 20, [f.hell, f.a, f.b]);
+      ctx.fill();
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+      gesicht(ctx, 50, 58, 0.85, f, o);
+    },
+    spezial: { label: 'Blühen', typ: 'funken', farbe: '#ff9ad2', text: 'Kobaltblüte! An der rosa Farbe erkannten Bergleute, dass Kobalterz in der Nähe ist.' },
+    wesen: 'Eine rosa Blüte aus strahligen Kristallblättchen – die „Kobaltblüte“. Berühmte Stufen kommen aus Schneeberg im Erzgebirge.',
+    pflege: 'Enthält Arsen: anschauen ja, ablecken nein, danach Hände waschen.',
+    fehler: 'Bekommt es Nickel statt Kobalt ins Futter, wird es zu seiner grünen Schwester Annabergit.'
+  },
+  {
+    id: 'silber', name: 'Silbitchi', mineral: 'Silber (gediegen)', formel: 'Ag', system: 'kubisch', mohs: '2,5–3',
+    schale: ['#f4f6fa', '#a6adba'],
+    varianten: [
+      { name: 'Blank', farben: { hell: '#ffffff', a: '#dfe3ea', b: '#a6adba', c: '#7c8390', locke: '#eef1f6', o: '#2c3038' }, notiz: 'Blank: frisch, mit hellem Metallglanz.' },
+      { name: 'Angelaufen', farben: { hell: '#8a8580', a: '#5a5550', b: '#35312e', c: '#211e1c', locke: '#6a645e', o: '#000000', dunkel: true, wange: 'rgba(255, 140, 160, 0.35)' }, notiz: 'Angelaufen: Schwefel aus der Luft überzieht Silber mit schwarzem Silbersulfid.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      // Silberlocken aus gekringeltem Draht: erst Rand, dann Draht
+      const locken = [[34, 58, -1], [40, 53, -1], [46, 51, 1], [54, 51, -1], [60, 53, 1], [66, 58, 1]];
+      [[f.o, 4.2], [f.locke, 2.2]].forEach(([farbe, breite]) => {
+        locken.forEach(([x, y, s]) => {
+          const ende = [x + s * 3, y - 27];
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.bezierCurveTo(x + s * 10, y - 10, x - s * 8, y - 18, ende[0], ende[1]);
+          ctx.lineWidth = breite;
+          ctx.strokeStyle = farbe;
+          ctx.lineCap = 'round';
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(ende[0] + s * 3.2, ende[1], 3.2, 0, Math.PI * 2);
+          ctx.stroke();
+        });
+      });
+
+      // Koerper mit Metallglanz
+      oval(ctx, 50, 68, 22, 18);
+      ctx.fillStyle = radial(ctx, 42, 60, 2, 50, 68, 23, [f.hell, f.a, f.b]);
+      ctx.fill();
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+      oval(ctx, 40, 59, 5, 2.4);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.fill();
+      gesicht(ctx, 50, 69, 0.95, f, o);
+    },
+    spezial: { label: 'Anlaufen', typ: 'zuVariante', ziel: 1, text: 'Ein bisschen Schwefel in der Luft – und schon läuft Silber schwarz an.' },
+    wesen: 'Trägt Silberlocken: Gediegen Silber wächst oft als gekringelter Draht. Freiberg im Erzgebirge ist mit Silber reich geworden.',
+    pflege: 'Nicht neben Eier, Gummi oder Schwefel stellen – all das lässt Silber anlaufen.',
+    fehler: 'Angelaufen wird es schwarz. Echte Silberlocken putzt man trotzdem lieber nicht, sie sind sehr zart.'
+  },
+  {
+    id: 'gold', name: 'Goldichi', mineral: 'Gold (gediegen)', formel: 'Au', system: 'kubisch', mohs: '2,5–3',
+    schale: ['#fff4c0', '#e0a820'],
+    varianten: [
+      { name: 'Gold', farben: { hell: '#fff6c0', a: '#ffd84a', b: '#d8a018', c: '#a07410', o: '#4e3606' }, notiz: 'Gold: sattgelb und immer glänzend.' },
+      { name: 'Elektrum', farben: { hell: '#ffffe8', a: '#f2eaa8', b: '#d0c470', c: '#a09848', o: '#4a4420' }, notiz: 'Elektrum: eine natürliche Mischung aus Gold und Silber, blasser gelb.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      // Nugget aus mehreren Klumpen
+      const klumpen = [[46, 44, 12], [38, 62, 18], [62, 58, 20], [50, 74, 18]];
+      ctx.strokeStyle = f.o;
+      ctx.lineWidth = 4.6;
+      klumpen.forEach(([x, y, r]) => { oval(ctx, x, y, r, r * 0.9); ctx.stroke(); });
+      klumpen.forEach(([x, y, r]) => {
+        oval(ctx, x, y, r, r * 0.9);
+        ctx.fillStyle = radial(ctx, x - r * 0.4, y - r * 0.4, 1, x, y, r, [f.hell, f.a, f.b]);
+        ctx.fill();
+        oval(ctx, x - r * 0.35, y - r * 0.4, r * 0.25, r * 0.13);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.fill();
+      });
+      gesicht(ctx, 50, 64, 1, f, o);
+    },
+    spezial: { label: 'Goldwaschen', typ: 'funken', farbe: '#ffe066', text: 'Gold ist so schwer, dass es beim Waschen in der Pfanne liegen bleibt, während Sand weggespült wird.' },
+    wesen: 'Ein glänzender Goldklumpen. Gold kommt gediegen vor, also als reines Metall, und läuft niemals an. Nicht mit Pyritchi verwechseln!',
+    pflege: 'Fast unverwüstlich, aber sehr weich – bitte nicht zerkratzen.',
+    fehler: 'Gold kennt keinen Pflegefehler. Höchstens verliert man es.'
+  },
+  {
+    id: 'vivianit', name: 'Vivianitchi', mineral: 'Vivianit', formel: 'Fe₃(PO₄)₂ · 8H₂O', system: 'monoklin', mohs: '1,5–2',
+    schale: ['#d6efe8', '#3a8ea0'],
+    varianten: [
+      { name: 'Frisch', farben: { a: '#eaf8f0', b: '#b6dccc', c: '#86b8a6', o: '#2e4a40' }, notiz: 'Frisch: fast farblos bis blassgrün und durchsichtig.' },
+      { name: 'Blaugrün', farben: { a: '#8ad0c8', b: '#3a8ea0', c: '#1e5e74', o: '#0c2a36' }, notiz: 'Blaugrün: so kennen ihn die meisten Sammler.' },
+      { name: 'Nachgedunkelt', farben: { a: '#3a5a6e', b: '#1e3444', c: '#0e1c26', o: '#000000', dunkel: true, wange: 'rgba(255, 140, 160, 0.35)' }, notiz: 'Nachgedunkelt: tiefblau bis fast schwarz.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 42, 62, 90, f);
+
+      // Kleiner Nebenkristall und schlanker Hauptkristall
+      kristall(ctx, 34, 28, 7, 84, f);
+      kristall(ctx, 55, 10, 13, 88, f);
+      gesicht(ctx, 55, 60, 0.9, f, o);
+    },
+    spezial: { label: 'Licht an', typ: 'weiter', text: 'Licht und Luft lassen Vivianit nachdunkeln – Schritt für Schritt bis fast schwarz.' },
+    wesen: 'Ein schlanker, weicher Kristall. Wächst auch in Mooren und färbt dort sogar alte Knochen blau.',
+    pflege: 'Im Dunkeln aufbewahren. Sehr weich – schon ein Fingernagel ritzt ihn.',
+    fehler: 'Zu viel Licht, und er wird tiefblau bis schwarz. Zurück geht es nicht.'
+  },
+  {
+    id: 'realgar', name: 'Realgartchi', mineral: 'Realgar', formel: 'As₄S₄', system: 'monoklin', mohs: '1,5–2',
+    schale: ['#ffc4a8', '#d23a1a'],
+    varianten: [
+      { name: 'Realgar', farben: { top: '#ffb08a', a: '#f2683a', b: '#d23a1a', c: '#9a200c', o: '#3e0a04', wange: 'rgba(255, 220, 200, 0.6)' }, notiz: 'Realgar: leuchtend rot-orange.' },
+      { name: 'Pararealgar', mineral: 'Pararealgar', farben: { top: '#fff0a0', a: '#f8d24a', b: '#e8a828', c: '#b87a14', o: '#4e3606', pulver: true }, notiz: 'Pararealgar: Licht hat ihn in gelbes Pulver verwandelt.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 39, 61, 90, f);
+
+      // Kurze Saeule mit Dachflaechen
+      flaeche(ctx, [[26, 36], [38, 40], [38, 90], [26, 84]], f.a);
+      flaeche(ctx, [[38, 40], [62, 40], [62, 90], [38, 90]], f.b);
+      flaeche(ctx, [[62, 40], [74, 36], [74, 84], [62, 90]], f.c);
+      flaeche(ctx, [[26, 36], [40, 24], [60, 24], [74, 36], [62, 40], [38, 40]], f.top);
+      [44, 50, 56].forEach(x => linie(ctx, [[x, 44], [x, 86]], 'rgba(255, 255, 255, 0.2)', 0.7));
+      flaeche(ctx, [[29, 40], [32, 41], [32, 82], [29, 81]], 'rgba(255, 255, 255, 0.4)');
+      umriss(ctx, [[26, 36], [40, 24], [60, 24], [74, 36], [74, 84], [62, 90], [38, 90], [26, 84]], f.o);
+      linie(ctx, [[26, 36], [38, 40], [62, 40], [74, 36]], f.o, 1.3);
+
+      // Zerfallspulver
+      if (f.pulver) {
+        ctx.fillStyle = '#f6d24a';
+        [[20, 90, 2], [28, 93, 1.6], [76, 91, 2.2], [84, 94, 1.4], [70, 95, 1.6], [30, 70, 1.4], [68, 56, 1.4], [46, 84, 1.2]].forEach(([x, y, r]) => { oval(ctx, x, y, r, r); ctx.fill(); });
+      }
+      gesicht(ctx, 50, 62, 1, f, o);
+    },
+    spezial: { label: 'Licht an', typ: 'zuVariante', ziel: 1, text: 'Licht zerstört Realgar: Er zerfällt langsam zu gelbem Pararealgar-Pulver.' },
+    wesen: 'Ein leuchtend rot-oranges Arsenmineral. Der Name kommt aus dem Arabischen und bedeutet ungefähr „Pulver der Grube“.',
+    pflege: 'Unbedingt im Dunkeln aufbewahren. Enthält Arsen – Finger weg vom Mund.',
+    fehler: 'Schon normales Zimmerlicht lässt ihn mit der Zeit zu Pulver zerfallen.'
+  },
+  {
+    id: 'schwefel', name: 'Schwefelchi', mineral: 'Schwefel (gediegen)', formel: 'S', system: 'orthorhombisch', mohs: '1,5–2,5',
+    schale: ['#fffbc0', '#f2d21a'],
+    varianten: [
+      { name: 'Frisch', farben: { hell: '#fffbd0', a: '#fff06a', b: '#f2d21a', c: '#c8a40c', o: '#5a4a06' }, notiz: 'Frisch: knallgelb mit Fettglanz.' },
+      { name: 'Rissig', farben: { hell: '#fffbd0', a: '#fff06a', b: '#f2d21a', c: '#c8a40c', o: '#5a4a06', risse: true }, notiz: 'Rissig: zu lange in der warmen Hand gehalten.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      // Doppelpyramide
+      flaeche(ctx, [[50, 8], [24, 50], [50, 50]], f.hell);
+      flaeche(ctx, [[50, 8], [50, 50], [76, 50]], f.a);
+      flaeche(ctx, [[24, 50], [50, 92], [50, 50]], f.a);
+      flaeche(ctx, [[50, 50], [50, 92], [76, 50]], f.b);
+      flaeche(ctx, [[44, 18], [47, 17], [30, 48], [27, 48]], 'rgba(255, 255, 255, 0.6)');
+      kanten(ctx, [[[50, 8], [50, 92]], [[24, 50], [76, 50]]]);
+
+      // Risse von der Handwaerme
+      if (f.risse) {
+        [[[34, 30], [40, 38], [37, 44]], [[62, 24], [58, 34], [64, 40]], [[30, 62], [38, 66], [36, 74]], [[66, 60], [60, 70]]].forEach(l => linie(ctx, l, f.o, 0.9));
+      }
+      umriss(ctx, [[50, 8], [76, 50], [50, 92], [24, 50]], f.o);
+      gesicht(ctx, 50, 54, 0.95, f, o);
+    },
+    spezial: { label: 'Anfassen', typ: 'zuVariante', ziel: 1, text: 'Knack! Schon Handwärme lässt Schwefelkristalle zerspringen, weil sie Wärme so schlecht leiten.' },
+    wesen: 'Ein knallgelber Kristall als Doppelpyramide. Entsteht oft an Vulkanen, wo schwefelhaltige Gase austreten.',
+    pflege: 'Nicht in die warme Hand nehmen und nicht anzünden – er brennt mit blauer Flamme.',
+    fehler: 'Einmal zu lange festgehalten, und er ist voller feiner Risse.'
+  },
+  {
+    id: 'fluorit', name: 'Fluoritchi', mineral: 'Fluorit', formel: 'CaF₂', system: 'kubisch', mohs: '4',
+    schale: ['#eadcff', '#8a5ad6'],
+    uvFarben: { hell: '#c8d8ff', a: '#8aa8ff', b: '#5a78ff', c: '#3a4ad8', kern: '#b0c4ff', o: '#14185a', iris: 'rgba(150, 180, 255, 0.8)' },
+    uvGlut: 'rgba(110, 140, 255, 0.9)',
+    varianten: [
+      { name: 'Lila', farben: { hell: '#f0e4ff', a: '#c8a4f0', b: '#9a6ad6', c: '#6a3eaa', o: '#2a1450' }, notiz: 'Lila: die klassische Fluoritfarbe.' },
+      { name: 'Grün', farben: { hell: '#e8fbe8', a: '#a8e8b0', b: '#5ec472', c: '#2e8a46', o: '#123a1e' }, notiz: 'Grün: ebenfalls sehr häufig.' },
+      { name: 'Zoniert', farben: { hell: '#f0e4ff', a: '#c8a4f0', b: '#9a6ad6', c: '#6a3eaa', o: '#2a1450', kern: '#9ee8a8' }, notiz: 'Zoniert: außen lila, innen grün – jede Zone ist eine Wachstumsphase.' },
+      { name: 'Gelb', farben: { hell: '#fff8d8', a: '#fbe48a', b: '#eec440', c: '#b8901a', o: '#4e3a08' }, notiz: 'Gelb: warm und honigfarben.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 34, 58, 90, f);
+      wuerfel(ctx, f);
+
+      // Farbzone im Inneren
+      if (f.kern) {
+        flaeche(ctx, [[30, 48], [60, 48], [60, 78], [30, 78]], f.kern);
+        flaeche(ctx, [[70, 46], [75, 41], [75, 72], [70, 78]], f.kern);
+      }
+      flaeche(ctx, [[25, 44], [28, 44], [28, 82], [25, 82]], 'rgba(255, 255, 255, 0.5)');
+      wuerfelUmriss(ctx, f);
+      gesicht(ctx, 45, 63, 1, f, o);
+    },
+    spezial: { label: 'UV-Lampe', typ: 'uv', text: 'Fluorit hat der Fluoreszenz ihren Namen gegeben – unter UV leuchten viele Stücke blau.', textAus: 'Lampe aus.' },
+    wesen: 'Ein bunter Würfel, oft mit Farbzonen. Ist auf der Mohs-Skala das Maß für Härte 4.',
+    pflege: 'Spaltet sich leicht in kleine Oktaeder – Sammler machen daraus gern Spaltstücke.',
+    fehler: 'Ein harter Stoß, und eine Ecke springt sauber ab.'
+  },
+  {
+    id: 'halit', name: 'Halitchi', mineral: 'Halit (Steinsalz)', formel: 'NaCl', system: 'kubisch', mohs: '2,5',
+    schale: ['#f4f8fc', '#b8c4d2'],
+    varianten: [
+      { name: 'Farblos', farben: { hell: '#ffffff', a: '#f4f7fa', b: '#dfe6ee', c: '#b8c4d2', o: '#4e5a6a' }, notiz: 'Farblos: klar wie Glas.' },
+      { name: 'Rosa', farben: { hell: '#fff0f2', a: '#fcd2da', b: '#f2a8b8', c: '#d07a90', o: '#5e2a38' }, notiz: 'Rosa: gefärbt von winzigen salzliebenden Mikroben.' },
+      { name: 'Blau', farben: { hell: '#eef4ff', a: '#b8ccff', b: '#7a98f0', c: '#4a64c4', o: '#18286a' }, notiz: 'Blau: Strahlung aus Kalisalzen hat das Kristallgitter verändert – bekannt aus deutschen Salzbergwerken.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 34, 58, 90, f);
+      wuerfel(ctx, f);
+
+      // Trichterwuerfel: eingesunkene Treppenstufen
+      [[5, f.a], [10, f.b], [15, f.a]].forEach(([einzug, farbe]) => {
+        const p = [[22 + einzug, 40 + einzug], [68 - einzug, 40 + einzug], [68 - einzug, 86 - einzug], [22 + einzug, 86 - einzug]];
+        flaeche(ctx, p, farbe);
+        umriss(ctx, p, 'rgba(0, 0, 0, 0.12)', 0.8);
+      });
+      wuerfelUmriss(ctx, f);
+      gesicht(ctx, 45, 63, 1, f, o);
+    },
+    spezial: { label: 'Gießen', typ: 'funken', farbe: '#8ac8ff', text: 'Hilfe, Wasser! Halit löst sich darin einfach auf.' },
+    wesen: 'Steinsalz als „Trichterwürfel“ mit eingesunkenen Treppenflächen. Die entstehen, weil er an den Kanten schneller wächst als in der Mitte.',
+    pflege: 'Trocken halten! Und auch wenn er nach Salz schmeckt: Minerale bitte nicht ablecken.',
+    fehler: 'Bei zu feuchter Luft werden die scharfen Kanten rund und klebrig.'
+  },
+  {
+    id: 'rhodochrosit', name: 'Rhodotchi', mineral: 'Rhodochrosit', formel: 'MnCO₃', system: 'trigonal', mohs: '3,5–4',
+    schale: ['#ffd4e0', '#e0507e'],
+    varianten: [
+      { name: 'Gebändert', form: 'scheibe', farben: { hell: '#ffe4ec', a: '#ffc4d4', b: '#f07a9e', c: '#c84a74', o: '#5a1a30' }, notiz: 'Gebändert: Scheiben aus Tropfsteinen, berühmt aus Argentinien.' },
+      { name: 'Kristall', form: 'kristall', farben: { hell: '#ffb0c0', a: '#ff6a8a', b: '#e0305a', c: '#a01838', o: '#40060f', wange: 'rgba(255, 220, 230, 0.6)' }, notiz: 'Kristall: himbeerrote Rhomboeder, berühmt aus der Sweet Home Mine in Colorado.' }
+    ],
+    male: (ctx, f, o) => {
+
+      // Himbeerroter Rhomboeder
+      if (o.form === 'kristall') {
+        fuesse(ctx, 30, 50, 91, f);
+        flaeche(ctx, [[30, 40], [44, 28], [80, 28], [66, 40]], f.hell);
+        flaeche(ctx, [[66, 40], [80, 28], [70, 76], [56, 88]], f.c);
+        pfad(ctx, [[30, 40], [66, 40], [56, 88], [20, 88]]);
+        ctx.fillStyle = verlauf(ctx, 20, 40, 66, 88, [f.a, f.b]);
+        ctx.fill();
+        flaeche(ctx, [[31, 44], [34, 44], [25, 84], [22, 84]], 'rgba(255, 255, 255, 0.45)');
+        umriss(ctx, [[30, 40], [44, 28], [80, 28], [70, 76], [56, 88], [20, 88]], f.o);
+        linie(ctx, [[30, 40], [66, 40], [80, 28]], f.o, 1.3);
+        linie(ctx, [[66, 40], [56, 88]], f.o, 1.3);
+        gesicht(ctx, 43, 63, 1, f, o);
+        return;
+      }
+
+      // Tropfsteinscheibe mit Baendern
+      fuesse(ctx, 40, 60, 90, f);
+      oval(ctx, 50, 58, 30, 30);
+      ctx.fillStyle = f.b;
+      ctx.fill();
+      ctx.save();
+      oval(ctx, 50, 58, 30, 30);
+      ctx.clip();
+      for (let r = 27, k = 0; r > 3; r -= 4.5, k++) {
+        oval(ctx, 50, 58, r, r);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = k % 2 ? f.a : f.hell;
+        ctx.stroke();
+      }
+      ctx.restore();
+      oval(ctx, 50, 58, 30, 30);
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+      gesicht(ctx, 50, 60, 1, f, o);
+    },
+    spezial: { label: 'Naschen', typ: 'text', text: 'Sieht aus wie Erdbeertorte, ist aber Mangancarbonat. Bitte nicht reinbeißen!' },
+    wesen: 'Rosa gebändert wie ein Stück Torte. Wird auch „Inkarose“ genannt, weil er in alten Silberminen der Inka gefunden wurde.',
+    pflege: 'Recht weich und stoßempfindlich – vorsichtig hinstellen.',
+    fehler: 'In warmer Säure braust er auf und löst sich langsam.'
+  },
+  {
+    id: 'opal', name: 'Opalchi', mineral: 'Opal', formel: 'SiO₂ · nH₂O', system: 'amorph', mohs: '5,5–6,5',
+    schale: ['#f2f4fa', '#b8c4e0'],
+    varianten: [
+      { name: 'Edelopal', farben: { koerper1: '#ffffff', koerper2: '#e2e8f2', c: '#c4ccda', o: '#4e5a6a', feuer: true }, notiz: 'Edelopal: hell mit buntem Farbenspiel.' },
+      { name: 'Schwarzopal', farben: { koerper1: '#3a4050', koerper2: '#14161e', c: '#14161e', o: '#000000', feuer: true, dunkel: true, wange: 'rgba(255, 140, 170, 0.35)' }, notiz: 'Schwarzopal: dunkler Grund, auf dem die Farben besonders leuchten.' },
+      { name: 'Feueropal', farben: { koerper1: '#ffd08a', koerper2: '#f07a2a', c: '#c05a14', o: '#5a2a08' }, notiz: 'Feueropal: orange bis rot, berühmt aus Mexiko.' },
+      { name: 'Rissig', farben: { koerper1: '#ffffff', koerper2: '#e2e8f2', c: '#c4ccda', o: '#4e5a6a', feuer: true, risse: true }, notiz: 'Rissig: ausgetrocknet und von feinen Rissen durchzogen.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      // Runder Koerper
+      oval(ctx, 50, 60, 30, 26);
+      ctx.fillStyle = radial(ctx, 42, 50, 3, 50, 60, 31, [f.koerper1, f.koerper2]);
+      ctx.fill();
+
+      // Farbenspiel: wechselnde Farbflecken
+      if (f.feuer) {
+        const farben = ['#ff6a8a', '#ffd23a', '#6ae06a', '#5ab4ff', '#c88aff', '#5ae0d8'];
+        ctx.save();
+        oval(ctx, 50, 60, 30, 26);
+        ctx.clip();
+        for (let k = 0; k < 16; k++) {
+          const x = 24 + (k * 37) % 52;
+          const y = 38 + (k * 23) % 44;
+          ctx.globalAlpha = 0.7;
+          flaeche(ctx, [[x, y - 4], [x + 4, y], [x, y + 4], [x - 4, y]], farben[(k + takt) % farben.length]);
+        }
+        ctx.restore();
+      }
+
+      // Risse beim Austrocknen
+      if (f.risse) {
+        [[[28, 50], [36, 56], [34, 64]], [[60, 40], [56, 50], [64, 56], [62, 64]], [[42, 74], [50, 70], [58, 78]]].forEach(l => linie(ctx, l, 'rgba(60, 70, 90, 0.7)', 0.9));
+      }
+
+      oval(ctx, 50, 60, 30, 26);
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+      oval(ctx, 39, 47, 7, 3);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+      ctx.fill();
+      gesicht(ctx, 50, 62, 1, f, o);
+    },
+    spezial: { label: 'Austrocknen', typ: 'zuVariante', ziel: 3, text: 'Zu trocken! Opal enthält Wasser – verliert er es, bekommt er feine Risse.' },
+    wesen: 'Kein Kristall, sondern winzige, dicht gepackte Kieselkügelchen. Daran bricht sich das Licht – so entsteht das bunte Farbenspiel.',
+    pflege: 'Nicht in die pralle Sonne und nicht auf die Heizung stellen.',
+    fehler: 'Trocknet er aus, zieht sich ein Netz feiner Risse durch ihn.'
+  },
+  {
+    id: 'okenit', name: 'Okenitchi', mineral: 'Okenit', formel: 'CaSi₂O₄(OH)₂ · H₂O', system: 'triklin', mohs: '4,5–5',
+    schale: ['#ffffff', '#d6dae4'],
+    varianten: [
+      { name: 'Wattebausch', farben: { hell: '#ffffff', a: '#f6f7fa', b: '#dfe2ea', c: '#c8ccd6', o: '#5a5e6e' }, notiz: 'Wattebausch: schneeweiße, flauschige Bällchen.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 91, f);
+
+      // Wolke aus vielen Faserbaellchen
+      const baellchen = [[40, 46, 12], [60, 46, 12], [50, 40, 11], [34, 62, 12], [66, 62, 12], [30, 76, 9], [70, 76, 9], [50, 76, 14], [50, 60, 18]];
+      ctx.strokeStyle = f.o;
+      ctx.lineWidth = 3.6;
+      baellchen.forEach(([x, y, r]) => { oval(ctx, x, y, r, r); ctx.stroke(); });
+      baellchen.forEach(([x, y, r]) => {
+        oval(ctx, x, y, r, r);
+        ctx.fillStyle = radial(ctx, x - r * 0.3, y - r * 0.35, 1, x, y, r, [f.hell, f.a, f.b]);
+        ctx.fill();
+      });
+
+      // Feine Fasern
+      for (let k = 0; k < 18; k++) {
+        const x = 30 + (k * 29) % 40, y = 38 + (k * 17) % 44;
+        linie(ctx, [[x, y], [x + 2, y - 2]], 'rgba(0, 0, 0, 0.08)', 0.6);
+      }
+      gesicht(ctx, 50, 60, 1, f, o);
+    },
+    spezial: { label: 'Pusten', typ: 'wackeln', text: 'Pfff! Okenit sieht aus wie Watte, besteht aber aus haarfeinen Kristallfasern.' },
+    wesen: 'Ein Wattebausch zum Verlieben. Wächst in Hohlräumen von Basalt in Indien – also in Drusen wie der, aus der Druschi schlüpft.',
+    pflege: 'Nicht anfassen! Die Bällchen sind so zart, dass jeder Finger einen Abdruck hinterlässt.',
+    fehler: 'Einmal gedrückt, ist der Wattebausch für immer platt.'
+  },
+  {
+    id: 'krokoit', name: 'Krokoitchi', mineral: 'Krokoit', formel: 'PbCrO₄', system: 'monoklin', mohs: '2,5–3',
+    schale: ['#ffd0a0', '#f2701a'],
+    varianten: [
+      { name: 'Orange', farben: { a: '#ffb05a', b: '#f2701a', c: '#b8480c', o: '#4e1a04', wange: 'rgba(255, 220, 200, 0.55)' }, notiz: 'Orange: leuchtende Kristallnadeln.' },
+      { name: 'Rotorange', farben: { a: '#ff8a5a', b: '#e8441a', c: '#a8260a', o: '#440c04', wange: 'rgba(255, 220, 200, 0.55)' }, notiz: 'Rotorange: noch kräftiger gefärbt.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      // Mikado aus langen Kristallnadeln
+      [-0.95, -0.55, -0.2, 0.25, 0.6, 1.0, 1.4].forEach(winkel => {
+        ctx.save();
+        ctx.translate(50, 56);
+        ctx.rotate(winkel);
+        rundRechteck(ctx, -3.5, -38, 7, 76, 1.5);
+        ctx.fillStyle = verlauf(ctx, -3.5, 0, 3.5, 0, [f.a, f.b, f.c]);
+        ctx.fill();
+        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = f.o;
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      // Koerper in der Mitte
+      rundRechteck(ctx, 35, 43, 30, 30, 8);
+      ctx.fillStyle = verlauf(ctx, 35, 43, 65, 73, [f.a, f.b]);
+      ctx.fill();
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+      gesicht(ctx, 50, 57, 0.9, f, o);
+    },
+    spezial: { label: 'Chrom', typ: 'funken', farbe: '#ffb05a', text: 'Im Krokoit wurde 1797 das Element Chrom entdeckt.' },
+    wesen: 'Ein Punk aus leuchtend orangen Kristallnadeln, kreuz und quer wie Mikado. Die schönsten Stufen kommen aus Dundas in Tasmanien.',
+    pflege: 'Die Nadeln sind spröde. Enthält Blei und Chrom – nach dem Anfassen Hände waschen.',
+    fehler: 'Einmal angestoßen, und das Mikado fällt auseinander.'
+  },
+  {
+    id: 'granat', name: 'Granatchi', mineral: 'Granat (Gruppe)', formel: 'X₃Y₂(SiO₄)₃', system: 'kubisch', mohs: '6,5–7,5',
+    schale: ['#ffc4c8', '#a01a2e'],
+    varianten: [
+      { name: 'Almandin', farben: { hell: '#ff8a8a', a: '#c82a3a', b: '#8a1426', c: '#5a0a18', o: '#2a040a', wange: 'rgba(255, 200, 210, 0.55)' }, notiz: 'Almandin: der klassische dunkelrote Granat.' },
+      { name: 'Spessartin', farben: { hell: '#ffc07a', a: '#f2782a', b: '#c04a12', c: '#8a300a', o: '#3a1404' }, notiz: 'Spessartin: orange, benannt nach dem Spessart.' },
+      { name: 'Tsavorit', farben: { hell: '#a8f2b0', a: '#3ec86a', b: '#1e8a42', c: '#0e5a2a', o: '#062a12' }, notiz: 'Tsavorit: smaragdgrüner Grossular aus Ostafrika.' },
+      { name: 'Demantoid', farben: { hell: '#e6ffa0', a: '#a6e03a', b: '#6aa81a', c: '#447a0e', o: '#1e3a06' }, notiz: 'Demantoid: gelbgrün und mit mehr Feuer als ein Diamant.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      // Rhombendodekaeder: drei Rauten treffen sich in der Mitte
+      flaeche(ctx, [[50, 14], [80, 32], [50, 50], [20, 32]], f.hell);
+      flaeche(ctx, [[20, 32], [50, 50], [50, 86], [20, 68]], f.a);
+      flaeche(ctx, [[80, 32], [80, 68], [50, 86], [50, 50]], f.b);
+      flaeche(ctx, [[30, 34], [44, 24], [47, 26], [33, 36]], 'rgba(255, 255, 255, 0.55)');
+      kanten(ctx, [[[20, 32], [50, 50], [80, 32]], [[50, 50], [50, 86]]]);
+      umriss(ctx, [[50, 14], [80, 32], [80, 68], [50, 86], [20, 68], [20, 32]], f.o);
+      gesicht(ctx, 50, 62, 1, f, o);
+    },
+    spezial: { label: 'Leuchten', typ: 'funken', farbe: '#ff6a7a', text: 'Granat heißt nach dem Granatapfel: Die roten Körner erinnern an seine Kerne.' },
+    wesen: 'Eine ganze Familie mit zwölf Rautenflächen (Rhombendodekaeder). Je nach Chemie rot, orange oder grün.',
+    pflege: 'Hart und pflegeleicht. Steckt gern im Glimmerschiefer, genau wie Staurotchi.',
+    fehler: 'Keiner – Granat ist robust. Nur Demantoid funkelt so stark, dass er manchmal angibt.'
+  },
+  {
+    id: 'chalkopyrit', name: 'Chalkopyritchi', mineral: 'Chalkopyrit (Kupferkies)', formel: 'CuFeS₂', system: 'tetragonal', mohs: '3,5–4',
+    schale: ['#fff0b0', '#c89a2a'],
+    varianten: [
+      { name: 'Messinggelb', farben: { hell: '#fff2a8', a: '#ecc84a', b: '#c49a22', c: '#8a6a10', o: '#3e2e06' }, notiz: 'Messinggelb: frisch, etwas dunkler und grünstichiger als Pyrit.' },
+      { name: 'Bunt angelaufen', farben: { hell: '#fff2a8', a: '#ecc84a', b: '#c49a22', c: '#8a6a10', o: '#2a1a3e', bunt: true }, notiz: 'Bunt angelaufen: schillert wie ein Pfauenrad – im Handel oft als „Pfauenerz“ verkauft.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 36, 64, 90, f);
+
+      // Disphenoid: Grat oben, Spitze unten
+      const vorne = [[30, 24], [70, 24], [50, 90]];
+      const links = [[30, 24], [50, 90], [16, 70]];
+      const rechts = [[70, 24], [84, 70], [50, 90]];
+      if (f.bunt) {
+        flaeche(ctx, links, verlauf(ctx, 16, 30, 50, 90, ['#3a6ad8', '#8a3ac8', '#e04a9a']));
+        flaeche(ctx, rechts, verlauf(ctx, 70, 24, 84, 90, ['#e8b82a', '#3ac0a8', '#2a4ad0']));
+        flaeche(ctx, vorne, verlauf(ctx, 30, 24, 70, 90, ['#ff7ab0', '#b04ae0', '#3a8ef0', '#e8c83a']));
+      } else {
+        flaeche(ctx, links, f.b);
+        flaeche(ctx, rechts, f.c);
+        flaeche(ctx, vorne, verlauf(ctx, 30, 24, 70, 90, [f.hell, f.a, f.b]));
+      }
+      flaeche(ctx, [[34, 28], [38, 28], [48, 80], [46, 82]], 'rgba(255, 255, 255, 0.4)');
+      kanten(ctx, [[[30, 24], [50, 90]], [[70, 24], [50, 90]]]);
+      umriss(ctx, [[30, 24], [70, 24], [84, 70], [50, 90], [16, 70]], f.o);
+      gesicht(ctx, 50, 50, 0.9, f, o);
+    },
+    spezial: { label: 'Anlaufen', typ: 'zuVariante', ziel: 1, text: 'An feuchter Luft läuft Kupferkies bunt an: blau, violett und gold – wie ein Pfauenrad.' },
+    wesen: 'Das wichtigste Kupfererz der Welt. Sieht aus wie ein Cousin von Pyritchi, ist aber weicher und dunkler gelb – ein Taschenmesser ritzt ihn, Pyrit nicht.',
+    pflege: 'Trocken lagern, wenn er messinggelb bleiben soll.',
+    fehler: 'Feuchtigkeit lässt ihn bunt anlaufen. Manche Sammler finden genau das am schönsten.'
+  },
+  {
+    id: 'talk', name: 'Talkitchi', mineral: 'Talk', formel: 'Mg₃Si₄O₁₀(OH)₂', system: 'monoklin', mohs: '1',
+    schale: ['#f4f8f0', '#bcd0b4'],
+    varianten: [
+      { name: 'Weiß', farben: { hell: '#ffffff', a: '#f2f4ee', b: '#d8ded0', c: '#b4bca8', o: '#565e4a' }, notiz: 'Weiß: mild und seifig glänzend.' },
+      { name: 'Grünlich', farben: { hell: '#f4fbf0', a: '#d4ecc8', b: '#a8d098', c: '#7aa86a', o: '#34502a' }, notiz: 'Grünlich: typisch für Speckstein.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 38, 62, 90, f);
+
+      // Weich wie ein Stueck Seife
+      rundRechteck(ctx, 22, 40, 56, 48, 16);
+      ctx.fillStyle = radial(ctx, 40, 50, 3, 50, 64, 40, [f.hell, f.a, f.b]);
+      ctx.fill();
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+      oval(ctx, 36, 50, 9, 3);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.fill();
+
+      // Kratzer vom Fingernagel
+      linie(ctx, [[56, 78], [68, 74]], 'rgba(0, 0, 0, 0.15)', 1);
+      linie(ctx, [[57, 81], [69, 77]], 'rgba(0, 0, 0, 0.12)', 1);
+      gesicht(ctx, 50, 62, 1, f, o);
+    },
+    spezial: { label: 'Kratzen', typ: 'funken', farbe: '#ffffff', text: 'Mohs 1! Schon der Fingernagel ritzt Talk. Er fühlt sich an wie Seife – das Gestein daraus heißt Speckstein.' },
+    wesen: 'Das weichste Mineral der Mohs-Skala. Rund und glatt wie ein Stück Seife – aus ihm macht man Babypuder.',
+    pflege: 'Gern streicheln, aber bitte ohne Fingernägel.',
+    fehler: 'Wer zu fest drückt, hinterlässt sofort Kratzer.'
+  },
+  {
+    id: 'gips', name: 'Gipsitchi', mineral: 'Gips', formel: 'CaSO₄ · 2H₂O', system: 'monoklin', mohs: '2',
+    schale: ['#fbf2e4', '#d4b48a'],
+    varianten: [
+      { name: 'Wüstenrose', form: 'rose', farben: { hell: '#fbe8cc', a: '#e8c898', b: '#c89c66', c: '#9a7040', o: '#4a321a' }, notiz: 'Wüstenrose: Gipsblätter mit eingeschlossenem Sand, gewachsen in der Wüste.' },
+      { name: 'Marienglas', form: 'tafel', farben: { hell: '#ffffff', a: '#f4f6f8', b: '#dfe4ea', c: '#b8c2cc', o: '#4e5a66' }, notiz: 'Marienglas: klare Tafeln, früher als Schutzglas für Heiligenbilder genutzt.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 91, f);
+
+      // Marienglas: klare, schraege Tafel
+      if (o.form === 'tafel') {
+        flaeche(ctx, [[30, 20], [66, 14], [72, 86], [36, 92]], verlauf(ctx, 30, 20, 72, 90, [f.hell, f.a, f.b]));
+        flaeche(ctx, [[66, 14], [72, 16], [78, 86], [72, 86]], f.c);
+        [[[34, 40], [68, 34]], [[35, 56], [70, 50]], [[37, 72], [71, 66]]].forEach(l => linie(ctx, l, 'rgba(120, 140, 160, 0.25)', 0.8));
+        flaeche(ctx, [[34, 26], [37, 25.5], [41, 86], [38, 86.5]], 'rgba(255, 255, 255, 0.7)');
+        umriss(ctx, [[30, 20], [66, 14], [72, 16], [78, 86], [72, 86], [36, 92]], f.o);
+        linie(ctx, [[66, 14], [72, 86]], f.o, 1.2);
+        gesicht(ctx, 52, 56, 1, f, o);
+        return;
+      }
+
+      // Wuestenrose: Blaetter rund um die Mitte
+      for (let k = 0; k < 12; k++) {
+        const w = k / 12 * Math.PI * 2;
+        ctx.save();
+        ctx.translate(50 + Math.cos(w) * 15, 60 + Math.sin(w) * 13);
+        ctx.rotate(w + Math.PI / 2);
+        oval(ctx, 0, 0, 13, 5);
+        ctx.fillStyle = k % 2 ? f.a : f.b;
+        ctx.fill();
+        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = f.o;
+        ctx.stroke();
+        ctx.restore();
+      }
+      oval(ctx, 50, 60, 16, 15);
+      ctx.fillStyle = radial(ctx, 45, 55, 2, 50, 60, 16, [f.hell, f.a]);
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+
+      // Eingeschlossener Sand
+      ctx.fillStyle = 'rgba(120, 80, 30, 0.3)';
+      [[26, 52], [72, 66], [40, 80], [64, 44], [30, 70]].forEach(([x, y]) => { oval(ctx, x, y, 1, 1); ctx.fill(); });
+      gesicht(ctx, 50, 61, 0.85, f, o);
+    },
+    spezial: { label: 'Ritzen', typ: 'funken', farbe: '#fff4d8', text: 'Mohs 2: Mit dem Fingernagel kann man Gips gerade noch ritzen.' },
+    wesen: 'Ein Verwandlungskünstler: mal sandige Wüstenrose, mal glasklare Tafel. Auf der Mohs-Skala das Maß für Härte 2.',
+    pflege: 'Nicht nass machen – Gips löst sich langsam in Wasser.',
+    fehler: 'Zu feucht gelagert, und die feinen Blätter werden stumpf.'
+  },
+  {
+    id: 'orthoklas', name: 'Orthoklasitchi', mineral: 'Orthoklas (Feldspat)', formel: 'KAlSi₃O₈', system: 'monoklin', mohs: '6',
+    schale: ['#ffe4d8', '#d89a80'],
+    varianten: [
+      { name: 'Fleischrot', farben: { top: '#ffe0d2', a: '#f4b8a0', b: '#d88a70', c: '#a85e48', o: '#4a2418' }, notiz: 'Fleischrot: die typische Feldspatfarbe im Granit.' },
+      { name: 'Mondstein', farben: { top: '#ffffff', a: '#eef2fa', b: '#d0d8e8', c: '#a8b4cc', o: '#46506a', mond: true, iris: 'rgba(120, 170, 255, 0.75)' }, notiz: 'Mondstein: ein Feldspat, der bläulich schimmert.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 38, 62, 90, f);
+
+      // Kantiger Kristall mit schraeger Kopfflaeche
+      flaeche(ctx, [[24, 38], [36, 44], [36, 90], [24, 84]], f.a);
+      flaeche(ctx, [[36, 44], [64, 44], [64, 90], [36, 90]], f.b);
+      flaeche(ctx, [[64, 44], [76, 38], [76, 84], [64, 90]], f.c);
+      flaeche(ctx, [[24, 38], [46, 22], [76, 38], [64, 44], [36, 44]], f.top);
+
+      // Mondschein
+      if (f.mond) {
+        oval(ctx, 50, 62, 16, 12);
+        ctx.fillStyle = 'rgba(120, 170, 255, 0.35)';
+        ctx.fill();
+      }
+      flaeche(ctx, [[27, 42], [30, 43], [30, 82], [27, 81]], 'rgba(255, 255, 255, 0.4)');
+
+      // Naht des Karlsbader Zwillings
+      linie(ctx, [[50, 44], [50, 90]], 'rgba(0, 0, 0, 0.15)', 0.9);
+      umriss(ctx, [[24, 38], [46, 22], [76, 38], [76, 84], [64, 90], [36, 90], [24, 84]], f.o);
+      linie(ctx, [[24, 38], [36, 44], [64, 44], [76, 38]], f.o, 1.3);
+      gesicht(ctx, 50, 64, 1, f, o);
+    },
+    spezial: { label: 'Schimmern', typ: 'funken', farbe: '#a8c8ff', text: 'Als Mondstein schimmert Feldspat bläulich (Adulareszenz). Orthoklas ist außerdem das Maß für Mohs 6.' },
+    wesen: 'Ein kantiger Feldspat, der fast überall im Granit steckt. Die Naht in der Mitte zeigt einen Karlsbader Zwilling – benannt nach Karlsbad in Böhmen.',
+    pflege: 'Hart genug für den Alltag: Ein Taschenmesser ritzt ihn nicht mehr.',
+    fehler: 'Verwittert er sehr lange, wird aus ihm weicher Ton.'
+  },
+  {
+    id: 'topas', name: 'Topatchi', mineral: 'Topas', formel: 'Al₂SiO₄(F,OH)₂', system: 'orthorhombisch', mohs: '8',
+    schale: ['#ffe4b8', '#e0902a'],
+    varianten: [
+      { name: 'Imperial', farben: { top: '#ffe2b0', a: '#ffb860', b: '#e8862a', c: '#b05a14', o: '#4a2406' }, notiz: 'Imperial: goldorange bis pfirsichrosa, die begehrteste Farbe.' },
+      { name: 'Sherry', farben: { top: '#fff0c8', a: '#f2cc7a', b: '#d4a24a', c: '#9e7228', o: '#46320e' }, notiz: 'Sherry: honig- bis weingelb.' },
+      { name: 'Blau', farben: { top: '#e6f8ff', a: '#a8e0f6', b: '#5ab8e6', c: '#2e86b8', o: '#0e3650' }, notiz: 'Blau: meist durch Bestrahlen und Brennen farbloser Topase.' },
+      { name: 'Farblos', farben: { top: '#ffffff', a: '#f4f7fa', b: '#dde4ec', c: '#b4c0ce', o: '#4a5666' }, notiz: 'Farblos: wasserklar.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 39, 61, 90, f);
+
+      // Gestreifte Saeule mit Dachspitze
+      flaeche(ctx, [[28, 40], [40, 46], [40, 90], [28, 84]], f.a);
+      flaeche(ctx, [[40, 46], [60, 46], [60, 90], [40, 90]], f.b);
+      flaeche(ctx, [[60, 46], [72, 40], [72, 84], [60, 90]], f.c);
+      flaeche(ctx, [[28, 40], [42, 18], [58, 18], [72, 40], [60, 46], [40, 46]], f.top);
+      linie(ctx, [[42, 18], [40, 46]], 'rgba(255, 255, 255, 0.4)', 0.8);
+      linie(ctx, [[58, 18], [60, 46]], 'rgba(0, 0, 0, 0.12)', 0.8);
+      [44, 50, 56].forEach(x => linie(ctx, [[x, 50], [x, 86]], 'rgba(255, 255, 255, 0.22)', 0.7));
+      flaeche(ctx, [[31, 44], [34, 45], [34, 82], [31, 81]], 'rgba(255, 255, 255, 0.45)');
+      umriss(ctx, [[28, 40], [42, 18], [58, 18], [72, 40], [72, 84], [60, 90], [40, 90], [28, 84]], f.o);
+      linie(ctx, [[28, 40], [40, 46], [60, 46], [72, 40]], f.o, 1.3);
+      gesicht(ctx, 50, 64, 1, f, o);
+    },
+    spezial: { label: 'Ritzen', typ: 'funken', farbe: '#ffd890', text: 'Mohs 8: Topas ritzt sogar Quarz. Auf der Mohs-Skala ist er das Maß für Härte 8.' },
+    wesen: 'Eine gestreifte Säule mit spitzem Dach. Ein berühmter sächsischer Fundort ist der Schneckenstein im Vogtland, ein ganzer Felsen voller Topas.',
+    pflege: 'Sehr hart, aber er spaltet leicht quer zur Säule – Stöße vermeiden.',
+    fehler: 'Ein Schlag an der falschen Stelle, und er bricht glatt durch.'
+  },
+  {
+    id: 'korund', name: 'Korundchi', mineral: 'Korund', formel: 'Al₂O₃', system: 'trigonal', mohs: '9',
+    schale: ['#ffd0d8', '#6a7ae0'],
+    varianten: [
+      { name: 'Rubin', farben: { top: '#ff9aa8', a: '#f04a62', b: '#c81a3a', c: '#8a0a24', o: '#3a020c', wange: 'rgba(255, 210, 220, 0.6)' }, notiz: 'Rubin: rot durch Chrom – unter UV leuchtet er kräftig rot.' },
+      { name: 'Saphir', farben: { top: '#b8ccff', a: '#5a82f0', b: '#2a4ad0', c: '#162a8a', o: '#060e3a' }, notiz: 'Saphir: blau durch Eisen und Titan.' },
+      { name: 'Padparadscha', farben: { top: '#ffdcc8', a: '#ffaa90', b: '#f27a6a', c: '#c04e48', o: '#4a1a16' }, notiz: 'Padparadscha: zart rosa-orange wie eine Lotusblüte und sehr selten.' },
+      { name: 'Gelb', farben: { top: '#fff4c0', a: '#fbd864', b: '#e8b42a', c: '#ae8212', o: '#4a3606' }, notiz: 'Gelb: auch ein Saphir – jede Korundfarbe außer Rot heißt Saphir.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      // Toennchen: sechsseitige Doppelpyramide
+      flaeche(ctx, [[40, 14], [46, 14], [44, 50], [46, 88], [40, 88], [26, 50]], f.a);
+      flaeche(ctx, [[46, 14], [54, 14], [56, 50], [54, 88], [46, 88], [44, 50]], f.b);
+      flaeche(ctx, [[54, 14], [60, 14], [74, 50], [60, 88], [54, 88], [56, 50]], f.c);
+      [[30, 33.5], [40, 30], [60, 30], [70, 33.5]].forEach(([y, b]) => linie(ctx, [[50 - b * 0.55, y], [50 + b * 0.55, y]], 'rgba(255, 255, 255, 0.2)', 0.7));
+      oval(ctx, 50, 14, 10, 2.5);
+      ctx.fillStyle = f.top;
+      ctx.fill();
+      flaeche(ctx, [[34, 40], [37, 34], [38, 64], [35, 60]], 'rgba(255, 255, 255, 0.4)');
+      umriss(ctx, [[40, 14], [60, 14], [74, 50], [60, 88], [40, 88], [26, 50]], f.o);
+      gesicht(ctx, 50, 52, 1, f, o);
+    },
+    spezial: { label: 'Glänzen', typ: 'funken', farbe: ['#ff6a7a', '#6a8aff'], text: 'Mohs 9: Nach dem Diamant ist Korund das härteste Mineral. Rubin und Saphir sind beide Korund.' },
+    wesen: 'Ein Tönnchen mit vielen Namen: Rot heißt es Rubin, in allen anderen Farben Saphir. Auf der Mohs-Skala das Maß für Härte 9.',
+    pflege: 'Fast unkaputtbar. Nur Diamantchi kann ihn ritzen.',
+    fehler: 'Keiner. Wer ihn mit Glas verwechselt, merkt den Unterschied spätestens beim Kratzen.'
+  },
+  {
+    id: 'magnetit', name: 'Magnetitchi', mineral: 'Magnetit', formel: 'Fe₃O₄', system: 'kubisch', mohs: '5,5–6,5',
+    schale: ['#cfd2d8', '#3a3e46'],
+    varianten: [
+      { name: 'Oktaeder', farben: { hell: '#8a909c', a: '#5a606a', b: '#383c44', c: '#1e2026', o: '#000000', dunkel: true, wange: 'rgba(255, 140, 160, 0.35)' }, notiz: 'Oktaeder: schwarz mit Metallglanz.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      // Oktaeder
+      flaeche(ctx, [[50, 14], [18, 52], [50, 52]], f.hell);
+      flaeche(ctx, [[50, 14], [50, 52], [82, 52]], f.a);
+      flaeche(ctx, [[18, 52], [50, 90], [50, 52]], f.b);
+      flaeche(ctx, [[50, 52], [50, 90], [82, 52]], f.c);
+      flaeche(ctx, [[44, 22], [47, 21], [26, 50], [23, 50]], 'rgba(255, 255, 255, 0.35)');
+      kanten(ctx, [[[50, 14], [50, 90]], [[18, 52], [82, 52]]]);
+      umriss(ctx, [[50, 14], [82, 52], [50, 90], [18, 52]], f.o);
+
+      // Angezogene Bueroklammern
+      if (o.schiller) {
+        [[22, 40, -0.6], [80, 40, 0.6], [78, 70, -0.5], [24, 68, 0.5]].forEach(([x, y, w]) => {
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(w);
+          ctx.lineWidth = 1.4;
+          ctx.strokeStyle = '#c8ccd4';
+          rundRechteck(ctx, -3, -8, 6, 16, 3);
+          ctx.stroke();
+          rundRechteck(ctx, -1.6, -5.5, 3.2, 10, 1.6);
+          ctx.stroke();
+          ctx.restore();
+        });
+      }
+      gesicht(ctx, 50, 56, 1, f, o);
+    },
+    spezial: { label: 'Magnet', typ: 'schiller', text: 'Klick! Magnetit ist magnetisch – Büroklammern bleiben einfach an ihm hängen.', textAus: 'Büroklammern abgenommen.' },
+    wesen: 'Ein schwarzes Oktaeder mit Metallglanz und von Natur aus magnetisch. Magnetisches Magnetiterz diente schon früh als Kompass.',
+    pflege: 'Nicht neben Bankkarten oder alte Kassetten legen.',
+    fehler: 'Zieht alles Eisenhaltige an – Krümel aus der Hosentasche inklusive.'
+  },
+  {
+    id: 'hackmanit', name: 'Hackmanitchi', mineral: 'Hackmanit (Sodalith)', formel: 'Na₈Al₆Si₆O₂₄(Cl₂,S)', system: 'kubisch', mohs: '5,5–6',
+    schale: ['#f4eef8', '#b48ad0'],
+    varianten: [
+      { name: 'Im Tageslicht', farben: { hell: '#ffffff', a: '#eeeaf2', b: '#d6d0de', c: '#b0a8bc', o: '#4e4658' }, notiz: 'Im Tageslicht: blass weiß bis grau.' },
+      { name: 'Nach UV', farben: { hell: '#f8d4ff', a: '#d68ae8', b: '#a650c8', c: '#7a2a9e', o: '#36104a' }, notiz: 'Nach UV: kräftig violett – bis das Tageslicht die Farbe wieder wegnimmt.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      // Rhombendodekaeder wie bei Granat
+      flaeche(ctx, [[50, 14], [80, 32], [50, 50], [20, 32]], f.hell);
+      flaeche(ctx, [[20, 32], [50, 50], [50, 86], [20, 68]], f.a);
+      flaeche(ctx, [[80, 32], [80, 68], [50, 86], [50, 50]], f.b);
+      flaeche(ctx, [[30, 34], [44, 24], [47, 26], [33, 36]], 'rgba(255, 255, 255, 0.55)');
+      kanten(ctx, [[[20, 32], [50, 50], [80, 32]], [[50, 50], [50, 86]]]);
+      umriss(ctx, [[50, 14], [80, 32], [80, 68], [50, 86], [20, 68], [20, 32]], f.o);
+      gesicht(ctx, 50, 62, 1, f, o);
+    },
+    spezial: { label: 'UV-Lampe', typ: 'wechsel', ziel: 1, text: 'Unter UV färbt sich Hackmanit violett (Tenebreszenz).', textAus: 'Tageslicht: Die Farbe verblasst wieder.' },
+    wesen: 'Ein Chamäleon: Es wechselt die Farbe, je nachdem, ob es UV-Licht oder Tageslicht abbekommt. Diesen seltenen Effekt nennt man Tenebreszenz.',
+    pflege: 'Abwechselnd UV-Lampe und Sonne – dann bleibt es in Bewegung.',
+    fehler: 'Im Dunkeln vergessen, bleibt es einfach so, wie es gerade ist.'
+  },
+  {
+    id: 'labradorit', name: 'Labradoritchi', mineral: 'Labradorit (Feldspat)', formel: '(Ca,Na)(Al,Si)₄O₈', system: 'triklin', mohs: '6–6,5',
+    schale: ['#c8d0d8', '#3a4a5a'],
+    varianten: [
+      { name: 'Grau', farben: { hell: '#8a96a2', a: '#5e6a76', b: '#3e4854', c: '#262e38', o: '#0a0e14', dunkel: true, wange: 'rgba(255, 150, 170, 0.35)' }, notiz: 'Grau: unscheinbar – bis man ihn kippt.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      // Polierte Scheibe
+      oval(ctx, 50, 60, 31, 27);
+      ctx.fillStyle = radial(ctx, 40, 48, 3, 50, 60, 32, [f.hell, f.a, f.b]);
+      ctx.fill();
+
+      // Labradoreszenz beim Kippen
+      if (o.schiller) {
+        const farben = ['#3ae0ff', '#3a7aff', '#6aff9a', '#ffd23a', '#3ad0c0'];
+        ctx.save();
+        oval(ctx, 50, 60, 31, 27);
+        ctx.clip();
+        ctx.globalAlpha = 0.65;
+        farben.forEach((farbe, k) => {
+          const x = 24 + k * 13;
+          flaeche(ctx, [[x, 30], [x + 12, 30], [x - 8, 92], [x - 20, 92]], farbe);
+        });
+        ctx.restore();
+      }
+      oval(ctx, 50, 60, 31, 27);
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+      oval(ctx, 38, 46, 7, 2.6);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.fill();
+      gesicht(ctx, 50, 62, 1, f, o);
+    },
+    spezial: { label: 'Kippen', typ: 'schiller', text: 'Im richtigen Winkel blitzt er blau, grün und gold auf – das ist Labradoreszenz.', textAus: 'Zurückgekippt: wieder grau.' },
+    wesen: 'Ein grauer Feldspat mit Geheimnis: Dreht man ihn im Licht, leuchtet er plötzlich blau und gold. Benannt nach Labrador in Kanada.',
+    pflege: 'Am schönsten im Streiflicht und poliert.',
+    fehler: 'Ohne Licht ist er einfach nur grau – und ein bisschen beleidigt.'
+  },
+  {
+    id: 'cavansit', name: 'Cavansitchi', mineral: 'Cavansit', formel: 'Ca(VO)Si₄O₁₀ · 4H₂O', system: 'orthorhombisch', mohs: '3–4',
+    schale: ['#c8e4ff', '#1a6ae0'],
+    varianten: [
+      { name: 'Rosette', farben: { a: '#7ac0ff', b: '#1a78f0', c: '#0a48b0', o: '#041e50', bett1: '#fff4e4', bett2: '#e8d4b8', iris: 'rgba(140, 210, 255, 0.8)' }, notiz: 'Rosette: leuchtend blaue Kugeln auf weißem Stilbit.' }
+    ],
+    male: (ctx, f, o) => {
+
+      // Kissen aus weissem Stilbit
+      ctx.beginPath();
+      ctx.moveTo(12, 84);
+      ctx.quadraticCurveTo(14, 72, 30, 74);
+      ctx.quadraticCurveTo(50, 68, 70, 74);
+      ctx.quadraticCurveTo(88, 72, 88, 84);
+      ctx.quadraticCurveTo(88, 95, 50, 95);
+      ctx.quadraticCurveTo(12, 95, 12, 84);
+      ctx.closePath();
+      ctx.fillStyle = verlauf(ctx, 0, 70, 0, 95, [f.bett1, f.bett2]);
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#6a5a44';
+      ctx.stroke();
+
+      // Blaue Nadelkugel
+      const nadeln = [];
+      for (let k = 0; k < 26; k++) {
+        const w = k / 26 * Math.PI * 2;
+        nadeln.push([[50 + Math.cos(w) * 18, 52 + Math.sin(w) * 18], [50 + Math.cos(w) * 31, 52 + Math.sin(w) * 31], k]);
+      }
+      nadeln.forEach(([p, q]) => linie(ctx, [p, q], f.o, 3));
+      nadeln.forEach(([p, q, k]) => linie(ctx, [p, q], k % 2 ? f.a : f.b, 1.6));
+      oval(ctx, 50, 52, 22, 22);
+      ctx.fillStyle = radial(ctx, 43, 45, 2, 50, 52, 23, [f.a, f.b, f.c]);
+      ctx.fill();
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+      gesicht(ctx, 50, 54, 0.95, f, o);
+    },
+    spezial: { label: 'Funkeln', typ: 'funken', farbe: '#9ad4ff', text: 'Der Name steckt in der Formel: Ca-Va-Si, also Calcium, Vanadium und Silicium.' },
+    wesen: 'Eine leuchtend blaue Nadelkugel auf einem weißen Stilbit-Kissen. Kommt fast nur aus Basalt-Drusen bei Pune in Indien.',
+    pflege: 'Klein und zart – meist sind die Kugeln nur wenige Millimeter groß.',
+    fehler: 'Einmal angestoßen, und die Kugel kullert vom Kissen.'
+  },
+  {
+    id: 'coelestin', name: 'Coelestinchi', mineral: 'Coelestin', formel: 'SrSO₄', system: 'orthorhombisch', mohs: '3–3,5',
+    schale: ['#e0f0ff', '#7ab4e8'],
+    varianten: [
+      { name: 'Himmelblau', farben: { a: '#d8ecff', b: '#8ec4f0', c: '#5a98d0', o: '#1e4a74' }, notiz: 'Himmelblau: die Farbe, der er seinen Namen verdankt.' },
+      { name: 'Weiß', farben: { a: '#ffffff', b: '#e4ebf2', c: '#c0ccd8', o: '#4e5a68' }, notiz: 'Weiß: farblose bis weiße Kristalle, oft zusammen mit Schwefel.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 42, 64, 90, f);
+      kristall(ctx, 34, 30, 8, 84, f);
+      kristall(ctx, 56, 16, 14, 88, f);
+
+      // Himmelswoelkchen
+      const wolke = [[22, 16, 5], [29, 12, 6], [36, 16, 5]];
+      ctx.strokeStyle = '#8aa8c8';
+      ctx.lineWidth = 3;
+      wolke.forEach(([x, y, r]) => { oval(ctx, x, y, r, r * 0.8); ctx.stroke(); });
+      ctx.fillStyle = '#ffffff';
+      wolke.forEach(([x, y, r]) => { oval(ctx, x, y, r, r * 0.8); ctx.fill(); });
+      gesicht(ctx, 56, 60, 0.9, f, o);
+    },
+    spezial: { label: 'Flamme', typ: 'funken', farbe: '#ff5a4a', text: 'Strontium färbt Flammen kräftig rot – darum steckt es in rotem Feuerwerk.' },
+    wesen: 'Ein himmelblauer Kristall mit eigenem Wölkchen: „caelestis“ heißt himmlisch. Wächst gern in Geoden.',
+    pflege: 'Recht weich und spaltbar – vorsichtig anfassen.',
+    fehler: 'Zu lange in der Sonne, und das Himmelblau verblasst.'
+  },
+  {
+    id: 'aragonit', name: 'Aragonitchi', mineral: 'Aragonit', formel: 'CaCO₃', system: 'orthorhombisch', mohs: '3,5–4',
+    schale: ['#f6f4f0', '#c4bcae'],
+    varianten: [
+      { name: 'Eisenblüte', form: 'koralle', farben: { hell: '#ffffff', a: '#f6f4f0', b: '#ddd8ce', c: '#bcb4a6', o: '#5a5244' }, notiz: 'Eisenblüte: verzweigt wie eine Koralle, gewachsen in Hohlräumen von Eisenerz.' },
+      { name: 'Drilling', form: 'saeule', farben: { top: '#eadcf0', a: '#cbb6dc', b: '#a68cc0', c: '#7a6296', o: '#3a2a4a' }, notiz: 'Drilling: drei verwachsene Kristalle, die zusammen wie eine sechsseitige Säule aussehen.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 91, f);
+
+      // Drilling als sechsseitige Saeule
+      if (o.form === 'saeule') {
+        flaeche(ctx, [[26, 32], [38, 38], [38, 90], [26, 84]], f.a);
+        flaeche(ctx, [[38, 38], [62, 38], [62, 90], [38, 90]], f.b);
+        flaeche(ctx, [[62, 38], [74, 32], [74, 84], [62, 90]], f.c);
+        flaeche(ctx, [[26, 32], [38, 26], [62, 26], [74, 32], [62, 38], [38, 38]], f.top);
+        linie(ctx, [[50, 38], [50, 90]], 'rgba(0, 0, 0, 0.12)', 0.8);
+        umriss(ctx, [[26, 32], [38, 26], [62, 26], [74, 32], [74, 84], [62, 90], [38, 90], [26, 84]], f.o);
+        linie(ctx, [[26, 32], [38, 38], [62, 38], [74, 32]], f.o, 1.3);
+        gesicht(ctx, 50, 62, 1, f, o);
+        return;
+      }
+
+      // Eisenbluete: verzweigte Aeste, erst Rand, dann Fuellung, dann Glanz
+      const aeste = [[[50, 80], [50, 56], [40, 40], [34, 22]], [[50, 56], [60, 38], [58, 20]], [[40, 40], [48, 26]], [[60, 38], [72, 28], [78, 16]], [[50, 66], [30, 58], [20, 44]], [[50, 66], [70, 58], [82, 46]], [[30, 58], [24, 30]]];
+      aeste.forEach(l => linie(ctx, l, f.o, 9.5));
+      aeste.forEach(l => linie(ctx, l, f.a, 6.5));
+      aeste.forEach(l => linie(ctx, l, 'rgba(255, 255, 255, 0.7)', 1.6));
+
+      // Klumpen unten mit Gesicht
+      oval(ctx, 50, 78, 20, 13);
+      ctx.fillStyle = radial(ctx, 44, 72, 2, 50, 78, 21, [f.hell, f.a, f.b]);
+      ctx.fill();
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+      gesicht(ctx, 50, 78, 0.85, f, o);
+    },
+    spezial: { label: 'Wachsen', typ: 'funken', farbe: '#ffffff', text: 'Die Eisenblüte wächst in Hohlräumen von Eisenerz – wie Korallen aus Stein.' },
+    wesen: 'Der Zwilling von Calcitchi: dieselbe Formel, aber eine andere Kristallstruktur. Als Eisenblüte verzweigt er sich wie eine weiße Koralle.',
+    pflege: 'Die Äste sind dünn und brechen leicht. Säure lässt ihn aufbrausen.',
+    fehler: 'Über sehr lange Zeit wandelt er sich in Calcit um.'
+  },
+  {
+    id: 'prehnit', name: 'Prehnitchi', mineral: 'Prehnit', formel: 'Ca₂Al(AlSi₃O₁₀)(OH)₂', system: 'orthorhombisch', mohs: '6–6,5',
+    schale: ['#eefbe0', '#9acc6e'],
+    varianten: [
+      { name: 'Hellgrün', farben: { hell: '#f4ffe8', a: '#cdeeaa', b: '#9acc6e', c: '#6e9e48', o: '#2e4a1e' }, notiz: 'Hellgrün: zart und durchscheinend.' },
+      { name: 'Gelbgrün', farben: { hell: '#fdffe0', a: '#e6ef9a', b: '#c4d05a', c: '#909c32', o: '#46501a' }, notiz: 'Gelbgrün: etwas wärmer im Ton.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 91, f);
+
+      // Traube aus Kugeln, die grosse Mitte zuletzt
+      const beeren = [[38, 38, 11], [58, 34, 12], [26, 54, 11], [72, 52, 12], [30, 74, 11], [70, 74, 11], [50, 82, 11], [50, 60, 18]];
+      ctx.strokeStyle = f.o;
+      ctx.lineWidth = 4;
+      beeren.forEach(([x, y, r]) => { oval(ctx, x, y, r, r); ctx.stroke(); });
+      beeren.forEach(([x, y, r]) => {
+        oval(ctx, x, y, r, r);
+        ctx.fillStyle = radial(ctx, x - r * 0.35, y - r * 0.4, 1, x, y, r, [f.hell, f.a, f.b]);
+        ctx.fill();
+        oval(ctx, x - r * 0.35, y - r * 0.45, r * 0.25, r * 0.14);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+        ctx.fill();
+      });
+      gesicht(ctx, 50, 61, 1, f, o);
+    },
+    spezial: { label: 'Pflücken', typ: 'text', text: 'Sieht aus wie Weintrauben, ist aber Stein. Prehnit gilt als eines der ersten Minerale, die nach einer Person benannt wurden.' },
+    wesen: 'Eine Traube aus zartgrünen Kugeln. Benannt nach Hendrik von Prehn, der es vom Kap der Guten Hoffnung mitbrachte.',
+    pflege: 'Hart, aber die einzelnen Kugeln brechen leicht ab.',
+    fehler: 'Fehlt eine Beere, hat wohl jemand genascht.'
+  },
+  {
+    id: 'stilbit', name: 'Stilbitchi', mineral: 'Stilbit', formel: 'NaCa₄(Al₉Si₂₇O₇₂) · 28H₂O', system: 'monoklin', mohs: '3,5–4',
+    schale: ['#ffeadc', '#e0a47a'],
+    varianten: [
+      { name: 'Pfirsich', farben: { a: '#ffe0c8', b: '#f2b48a', c: '#c88a5e', o: '#5a321a' }, notiz: 'Pfirsich: zartes Lachsrosa mit Perlmuttglanz.' },
+      { name: 'Weiß', farben: { a: '#ffffff', b: '#e8e4dc', c: '#c4bcb0', o: '#5a5244' }, notiz: 'Weiß: das typische Kissen unter Cavansit.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 42, 58, 90, f);
+
+      // Garbe: zwei Faecher, in der Mitte eingeschnuert
+      [-1, 1].forEach(s => {
+        pfad(ctx, [[50, 58], [50 + s * 36, 30], [50 + s * 40, 58], [50 + s * 36, 86]]);
+        ctx.fillStyle = verlauf(ctx, 50, 0, 50 + s * 40, 0, [f.b, f.a]);
+        ctx.fill();
+        ctx.lineWidth = 2.2;
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = f.o;
+        ctx.stroke();
+        for (let k = 0; k < 6; k++) linie(ctx, [[50, 58], [50 + s * 37, 32 + k * 10.5]], 'rgba(255, 255, 255, 0.35)', 0.8);
+      });
+
+      // Knoten in der Mitte
+      rundRechteck(ctx, 39, 47, 22, 23, 6);
+      ctx.fillStyle = verlauf(ctx, 39, 47, 61, 70, [f.a, f.b]);
+      ctx.fill();
+      ctx.lineWidth = 2.2;
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+      gesicht(ctx, 50, 57, 0.75, f, o);
+    },
+    spezial: { label: 'Glänzen', typ: 'funken', farbe: '#fff0e0', text: '„Stilbe“ heißt Glanz: Stilbit schimmert wie Perlmutt.' },
+    wesen: 'Eine Garbe aus Kristallblättchen, in der Mitte eingeschnürt wie eine Fliege. In indischen Drusen das Kissen für Cavansitchi und Apophyllitchi.',
+    pflege: 'Ein Zeolith: Er verliert beim Erhitzen Wasser – also nicht auf die Heizung.',
+    fehler: 'Zu warm gelagert, und er wird trüb und matt.'
+  },
+  {
+    id: 'apophyllit', name: 'Apophyllitchi', mineral: 'Apophyllit', formel: 'KCa₄Si₈O₂₀(F,OH) · 8H₂O', system: 'tetragonal', mohs: '4,5–5',
+    schale: ['#eefaf2', '#9adcb0'],
+    varianten: [
+      { name: 'Farblos', farben: { hell: '#ffffff', a: '#f2f6fa', b: '#d6e0ea', c: '#b0bfce', o: '#4a5868' }, notiz: 'Farblos: glasklar wie Eis.' },
+      { name: 'Grün', farben: { hell: '#f0fff4', a: '#c4f0d2', b: '#7cd49a', c: '#44a068', o: '#1a4a2a' }, notiz: 'Grün: zart mintgrün, berühmt aus Indien.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 39, 61, 90, f);
+
+      // Vierseitige Saeule mit Pyramide
+      flaeche(ctx, [[30, 40], [50, 46], [50, 90], [30, 84]], f.a);
+      flaeche(ctx, [[50, 46], [70, 40], [70, 84], [50, 90]], f.b);
+      flaeche(ctx, [[50, 12], [30, 40], [50, 46]], f.hell);
+      flaeche(ctx, [[50, 12], [50, 46], [70, 40]], f.c);
+      flaeche(ctx, [[33, 44], [36, 45], [36, 82], [33, 81]], 'rgba(255, 255, 255, 0.55)');
+      kanten(ctx, [[[50, 12], [50, 90]], [[30, 40], [50, 46], [70, 40]]]);
+      umriss(ctx, [[50, 12], [70, 40], [70, 84], [50, 90], [30, 84], [30, 40]], f.o);
+      gesicht(ctx, 50, 64, 1, f, o);
+    },
+    spezial: { label: 'Erhitzen', typ: 'funken', farbe: '#e8f6ff', text: '„Apophyllit“ heißt Abblätterer: Erhitzt man ihn, blättert er in dünne Schichten auf.' },
+    wesen: 'Ein klarer Kristall mit Pyramidenspitze. Wächst in Basaltdrusen, oft zusammen mit Stilbitchi und Okenitchi.',
+    pflege: 'Nicht mit härteren Stufen zusammen in eine Kiste legen – er verkratzt leicht.',
+    fehler: 'Zu heiß, und er blättert auf.'
+  },
+  {
+    id: 'smithsonit', name: 'Smithsonitchi', mineral: 'Smithsonit', formel: 'ZnCO₃', system: 'trigonal', mohs: '4–4,5',
+    schale: ['#e0f8f2', '#5ec4b0'],
+    varianten: [
+      { name: 'Blaugrün', farben: { hell: '#e8fff8', a: '#a6e8d8', b: '#5ec4b0', c: '#2e8a7a', o: '#0e3a34' }, notiz: 'Blaugrün: durch Kupfer, berühmt aus der Kelly Mine in New Mexico.' },
+      { name: 'Rosa', farben: { hell: '#fff0f6', a: '#fcc8de', b: '#f294bc', c: '#c86090', o: '#5a1e3a' }, notiz: 'Rosa: durch Kobalt, zum Beispiel aus Tsumeb.' },
+      { name: 'Gelb', farben: { hell: '#fffbe0', a: '#fbe89a', b: '#eec85a', c: '#b8902a', o: '#4e3a0e' }, notiz: 'Gelb: durch Cadmium – in Arkansas „Truthahnfett-Erz“ genannt.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 91, f);
+
+      // Nieriges Kissen aus seidigen Kuppeln
+      const kuppeln = [[30, 66, 14], [70, 66, 14], [42, 52, 15], [60, 50, 15], [50, 68, 20]];
+      ctx.strokeStyle = f.o;
+      ctx.lineWidth = 4.4;
+      kuppeln.forEach(([x, y, r]) => { oval(ctx, x, y, r, r * 0.9); ctx.stroke(); });
+      kuppeln.forEach(([x, y, r]) => {
+        oval(ctx, x, y, r, r * 0.9);
+        ctx.fillStyle = radial(ctx, x - r * 0.3, y - r * 0.4, 1, x, y, r, [f.hell, f.a, f.b]);
+        ctx.fill();
+        oval(ctx, x - r * 0.3, y - r * 0.45, r * 0.45, r * 0.13);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+        ctx.fill();
+      });
+      gesicht(ctx, 50, 68, 1, f, o);
+    },
+    spezial: { label: 'Namenspate', typ: 'text', text: 'Benannt nach James Smithson – mit seinem Erbe wurde das Smithsonian in Washington gegründet.' },
+    wesen: 'Ein Kissen aus seidig glänzenden Kuppeln in Pastellfarben. Ein Zinkerz, das Bergleute früher „Galmei“ nannten.',
+    pflege: 'Säure mag er nicht – wie alle Carbonate braust er darin auf.',
+    fehler: 'Ein Spritzer Säure, und die schöne Seidenhaut wird stumpf.'
+  },
+  {
+    id: 'hemimorphit', name: 'Hemimorphitchi', mineral: 'Hemimorphit', formel: 'Zn₄Si₂O₇(OH)₂ · H₂O', system: 'orthorhombisch', mohs: '4,5–5',
+    schale: ['#eef6fc', '#a8c8e0'],
+    varianten: [
+      { name: 'Farblos', farben: { hell: '#ffffff', a: '#f2f6fa', b: '#d0dae4', c: '#a8b6c4', o: '#46525e' }, notiz: 'Farblos: klare Klingen im Fächer.' },
+      { name: 'Blau', farben: { hell: '#eaf6ff', a: '#a8d8f6', b: '#5ab0e6', c: '#2a7cb8', o: '#0e3452' }, notiz: 'Blau: himmelblau, berühmt aus Yunnan in China.' }
+    ],
+    male: (ctx, f, o) => {
+      ctx.save();
+
+      // Umgedreht steht er auf dem Kopf
+      if (o.schiller) {
+        ctx.translate(50, 52);
+        ctx.rotate(Math.PI);
+        ctx.translate(-50, -52);
+      }
+
+      fuesse(ctx, 40, 60, 88, f);
+
+      // Faecher aus Klingen: oben spitz, unten stumpf
+      [-0.5, -0.25, 0, 0.25, 0.5].forEach(w => {
+        ctx.save();
+        ctx.translate(50, 84);
+        ctx.rotate(w);
+        pfad(ctx, [[-5, 0], [5, 0], [5, -50], [0, -64], [-5, -50]]);
+        ctx.fillStyle = verlauf(ctx, -5, 0, 5, 0, [f.a, f.b]);
+        ctx.fill();
+        ctx.lineWidth = 1.8;
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = f.o;
+        ctx.stroke();
+        linie(ctx, [[0, -62], [0, -4]], 'rgba(255, 255, 255, 0.35)', 0.7);
+        ctx.restore();
+      });
+
+      // Koerper unten
+      rundRechteck(ctx, 34, 56, 32, 30, 10);
+      ctx.fillStyle = radial(ctx, 44, 64, 2, 50, 71, 24, [f.hell, f.a, f.b]);
+      ctx.fill();
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = f.o;
+      ctx.stroke();
+      gesicht(ctx, 50, 70, 0.9, f, o);
+      ctx.restore();
+    },
+    spezial: { label: 'Umdrehen', typ: 'schiller', text: 'Andersrum sieht er ganz anders aus: oben spitz, unten stumpf – „hemimorph“ heißt halb geformt.', textAus: 'Wieder richtig herum.' },
+    wesen: 'Ein Fächer aus klaren Klingen. Seine Kristalle sind an beiden Enden verschieden, oben spitz und unten stumpf.',
+    pflege: 'Lädt sich beim Erwärmen elektrisch auf, genau wie Turmatchi.',
+    fehler: 'Wer ihn falsch herum hinstellt, verwirrt alle Besucher.'
+  },
+  {
+    id: 'benitoit', name: 'Benitoitchi', mineral: 'Benitoit', formel: 'BaTiSi₃O₉', system: 'hexagonal', mohs: '6–6,5',
+    schale: ['#d8e6ff', '#3a64e0'],
+    uvFarben: { hell: '#ffffff', a: '#d8ecff', b: '#9ad0ff', c: '#5aa8ff', o: '#0a2a6a', iris: 'rgba(170, 220, 255, 0.9)' },
+    uvGlut: 'rgba(120, 190, 255, 0.95)',
+    varianten: [
+      { name: 'Saphirblau', farben: { hell: '#c8daff', a: '#6a96f6', b: '#3a64e0', c: '#1e3aa8', o: '#081a52' }, notiz: 'Saphirblau: die typische, leuchtende Farbe.' },
+      { name: 'Farblos', farben: { hell: '#ffffff', a: '#f2f6fa', b: '#d6e0ea', c: '#b0bfce', o: '#4a5868' }, notiz: 'Farblos: selten – leuchtet unter UV aber genauso.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      // Dreieckiger Kristall von oben gesehen
+      flaeche(ctx, [[50, 14], [86, 80], [50, 58]], f.a);
+      flaeche(ctx, [[86, 80], [14, 80], [50, 58]], f.c);
+      flaeche(ctx, [[14, 80], [50, 14], [50, 58]], f.hell);
+      flaeche(ctx, [[44, 26], [47, 24], [26, 70], [23, 70]], 'rgba(255, 255, 255, 0.5)');
+      kanten(ctx, [[[50, 14], [50, 58]], [[86, 80], [50, 58]], [[14, 80], [50, 58]]]);
+      umriss(ctx, [[50, 14], [86, 80], [14, 80]], f.o);
+      gesicht(ctx, 50, 62, 0.95, f, o);
+    },
+    spezial: { label: 'UV-Lampe', typ: 'uv', text: 'Unter kurzwelligem UV leuchtet Benitoit grell blau.', textAus: 'Lampe aus.' },
+    wesen: 'Ein saphirblaues Dreieck – so eine Kristallform ist sehr selten. Edelsteinqualität kommt praktisch nur aus einer einzigen Grube in Kalifornien.',
+    pflege: 'Ist Kaliforniens Staatsedelstein und entsprechend stolz.',
+    fehler: 'Keiner. Aber er ist so selten, dass man ihn besser nicht verliert.'
+  },
+  {
+    id: 'proustit', name: 'Proustitchi', mineral: 'Proustit (lichtes Rotgültigerz)', formel: 'Ag₃AsS₃', system: 'trigonal', mohs: '2–2,5',
+    schale: ['#ffc8cc', '#c81e30'],
+    varianten: [
+      { name: 'Rubinrot', farben: { hell: '#ffb0b8', a: '#f0505e', b: '#c81e30', c: '#8a0a1a', o: '#3a0208', wange: 'rgba(255, 210, 220, 0.6)' }, notiz: 'Rubinrot: frisch und durchscheinend.' },
+      { name: 'Nachgedunkelt', farben: { hell: '#8a6a70', a: '#6a3e46', b: '#4a2228', c: '#2a1014', o: '#000000', dunkel: true, wange: 'rgba(255, 150, 170, 0.35)' }, notiz: 'Nachgedunkelt: zu viel Licht abbekommen.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      // Saeule mit spitzer Skalenoeder-Spitze
+      flaeche(ctx, [[32, 42], [44, 48], [44, 88], [32, 82]], f.a);
+      flaeche(ctx, [[44, 48], [56, 48], [56, 88], [44, 88]], f.b);
+      flaeche(ctx, [[56, 48], [68, 42], [68, 82], [56, 88]], f.c);
+      flaeche(ctx, [[50, 8], [32, 42], [44, 48]], f.a);
+      flaeche(ctx, [[50, 8], [44, 48], [56, 48]], f.hell);
+      flaeche(ctx, [[50, 8], [56, 48], [68, 42]], f.c);
+      flaeche(ctx, [[35, 46], [38, 47.5], [38, 80], [35, 78.5]], 'rgba(255, 255, 255, 0.45)');
+      kanten(ctx, [[[44, 48], [44, 88]], [[56, 48], [56, 88]], [[32, 42], [44, 48], [56, 48], [68, 42]], [[44, 48], [50, 8], [56, 48]]]);
+      umriss(ctx, [[50, 8], [68, 42], [68, 82], [56, 88], [44, 88], [32, 82], [32, 42]], f.o);
+      gesicht(ctx, 50, 64, 0.95, f, o);
+    },
+    spezial: { label: 'Licht an', typ: 'zuVariante', ziel: 1, text: 'Im Licht dunkelt Proustit nach – darum liegt er bei Sammlern im Dunkeln.' },
+    wesen: 'Rubinrot und durchscheinend, dabei ein Silbererz. Bergleute nannten ihn „lichtes Rotgültigerz“. Benannt nach dem Chemiker Joseph Louis Proust.',
+    pflege: 'Unbedingt dunkel aufbewahren. Enthält Arsen – nicht in den Mund.',
+    fehler: 'Zu viel Licht, und das Rubinrot wird matt und grau.'
+  }
+];
+
+// ===== Fundorte: Typlokalitaet (typ) und beruehmte Fundstellen (ber) =====
+// Schluessel: Figuren-Id oder "id:Variantenname" fuer Varianten, die eigene Minerale sind
+
+const ANTIKE = 'keine – seit der Antike bekannt';
+const FUNDORTE = {
+  quarz: { typ: ANTIKE, ber: 'Hot Springs (Arkansas, USA), Schweizer Alpen' },
+  amethyst: { ber: 'Rio Grande do Sul (Brasilien), Artigas (Uruguay)' },
+  turmalin: { typ: 'für Elbait: Insel Elba (Italien)', ber: 'Minas Gerais (Brasilien), Pala (Kalifornien)' },
+  beryll: { typ: ANTIKE, ber: 'Muzo (Kolumbien) für Smaragd, Minas Gerais (Brasilien) für Aquamarin' },
+  wavellit: { typ: 'High Down bei Filleigh, Devon (England)', ber: 'Montgomery County (Arkansas, USA), Langenstriegis (Sachsen)' },
+  autunit: { typ: 'Saint-Symphorien-de-Marmagne bei Autun (Frankreich)', ber: 'Daybreak Mine (Washington, USA)' },
+  wulfenit: { typ: 'Bad Bleiberg, Kärnten (Österreich)', ber: 'Red Cloud Mine (Arizona, USA), Mežica (Slowenien)' },
+  sphalerit: { typ: ANTIKE, ber: 'Picos de Europa (Spanien), Elmwood Mine (Tennessee, USA)' },
+  galenit: { typ: ANTIKE, ber: 'Freiberg (Sachsen), Neudorf (Harz), Missouri (USA)' },
+  pyrit: { typ: ANTIKE, ber: 'Navajún (Spanien) mit fast perfekten Würfeln, Huanzala (Peru)' },
+  staurolith: { ber: 'Keiwy (Kola, Russland), Bretagne (Frankreich), Fannin County (Georgia, USA)' },
+  pyromorphit: { ber: 'Bad Ems (Rheinland-Pfalz), Bunker Hill Mine (Idaho, USA), Daoping (China)' },
+  vanadinit: { typ: 'Zimapán, Hidalgo (Mexiko)', ber: 'Mibladen (Marokko), Apache Mine (Arizona, USA)' },
+  azurit: { typ: ANTIKE, ber: 'Chessy-les-Mines bei Lyon (Frankreich), Tsumeb (Namibia), Bisbee (Arizona, USA)' },
+  'azurit:Malachit': { typ: ANTIKE, ber: 'Katanga (Kongo), Ural (Russland)' },
+  calcit: { typ: ANTIKE, ber: 'Helgustaðir (Island) für Doppelspat, Elmwood Mine (Tennessee, USA)' },
+  dolomit: { ber: 'Eugui, Navarra (Spanien), Brumado (Brasilien)' },
+  torbernit: { typ: 'Johanngeorgenstadt, Erzgebirge (Sachsen)', ber: 'Musonoi (Kongo), Cornwall (England)' },
+  cuprosklodowskit: { typ: 'Kalongwe, Katanga (Kongo)', ber: 'Musonoi Mine bei Kolwezi (Kongo)' },
+  uraninit: { typ: 'Jáchymov / St. Joachimsthal (Tschechien)', ber: 'Shinkolobwe (Kongo), Schlema-Alberoda (Sachsen)' },
+  zirkon: { typ: ANTIKE, ber: 'Jack Hills (Australien), Ratanakiri (Kambodscha), Sri Lanka' },
+  apatit: { ber: 'Cerro de Mercado, Durango (Mexiko), Panasqueira (Portugal)' },
+  diamant: { typ: ANTIKE, ber: 'Kimberley (Südafrika), Golkonda (Indien), Argyle (Australien)' },
+  'diamant:Graphit': { ber: 'Borrowdale (England), die Wiege der Bleistiftherstellung' },
+  uranocircit: { typ: 'Bergen bei Falkenstein, Vogtland (Sachsen)', ber: 'Menzenschwand (Schwarzwald)' },
+  erythrin: { typ: 'Schneeberg, Erzgebirge (Sachsen)', ber: 'Bou Azzer (Marokko)' },
+  'erythrin:Annabergit': { typ: 'Annaberg-Buchholz, Erzgebirge (Sachsen)', ber: 'Laurion (Griechenland)' },
+  silber: { typ: ANTIKE, ber: 'Kongsberg (Norwegen) für Drahtsilber, Freiberg (Sachsen)' },
+  gold: { typ: ANTIKE, ber: 'Kalifornien (USA), Witwatersrand (Südafrika), Klondike (Kanada)' },
+  vivianit: { typ: 'Wheal Kind bei St Agnes, Cornwall (England)', ber: 'Huanuni (Bolivien), Kertsch (Krim)' },
+  realgar: { typ: ANTIKE, ber: 'Shimen, Hunan (China), Getchell Mine (Nevada, USA)' },
+  schwefel: { typ: ANTIKE, ber: 'Agrigent (Sizilien), Vulcano (Italien)' },
+  fluorit: { ber: 'Weardale (England), Wölsendorf (Oberpfalz), Elmwood Mine (Tennessee, USA)' },
+  halit: { typ: ANTIKE, ber: 'Wieliczka (Polen), Werra-Kalirevier (Hessen/Thüringen) für blauen Halit' },
+  rhodochrosit: { typ: 'Cavnic / Kapnik (Rumänien)', ber: 'Capillitas (Argentinien), Sweet Home Mine (Colorado, USA)' },
+  opal: { typ: ANTIKE, ber: 'Coober Pedy und Lightning Ridge (Australien), Querétaro (Mexiko)' },
+  okenit: { typ: 'Insel Disko (Grönland)', ber: 'Basaltbrüche bei Pune und Mumbai (Indien)' },
+  krokoit: { typ: 'Beresowsk, Ural (Russland)', ber: 'Adelaide Mine bei Dundas (Tasmanien)' },
+  granat: { ber: 'Namensgeber: Alabanda (Türkei) für Almandin, Spessart für Spessartin, Tsavo (Kenia) für Tsavorit' },
+  chalkopyrit: { typ: ANTIKE, ber: 'Huanzala (Peru), Cornwall (England)' },
+  talk: { typ: ANTIKE, ber: 'Göpfersgrün im Fichtelgebirge, berühmt für Speckstein nach Quarz' },
+  gips: { typ: ANTIKE, ber: 'Naica (Mexiko) mit Riesenkristallen, Sahara (Tunesien) für Wüstenrosen' },
+  orthoklas: { ber: 'Karlsbad (Tschechien) für Karlsbader Zwillinge, Sri Lanka für Mondstein' },
+  topas: { typ: ANTIKE, ber: 'Schneckenstein (Vogtland), Ouro Preto (Brasilien) für Imperial-Topas' },
+  korund: { typ: ANTIKE, ber: 'Mogok (Myanmar) für Rubin, Kaschmir und Sri Lanka für Saphir' },
+  magnetit: { typ: ANTIKE, ber: 'Kiruna (Schweden)' },
+  hackmanit: { ber: 'Mont Saint-Hilaire (Kanada), Badachschan (Afghanistan), Ilímaussaq (Grönland)' },
+  labradorit: { typ: 'Paul Island, Labrador (Kanada)', ber: 'Ylämaa (Finnland) als „Spektrolith“, Madagaskar' },
+  cavansit: { typ: 'Owyhee Dam, Oregon (USA)', ber: 'Wagholi bei Pune (Indien)' },
+  coelestin: { ber: 'Sakoany (Madagaskar) für Geoden, Sizilien zusammen mit Schwefel' },
+  aragonit: { typ: 'Molina de Aragón (Spanien)', ber: 'Erzberg (Steiermark) für Eisenblüte' },
+  prehnit: { typ: 'Kap der Guten Hoffnung (Südafrika)', ber: 'Kayes (Mali), Paterson (New Jersey, USA)' },
+  stilbit: { ber: 'Pune (Indien), Berufjörður (Island), Färöer' },
+  apophyllit: { ber: 'Pune und Jalgaon (Indien), Sankt Andreasberg (Harz)' },
+  smithsonit: { ber: 'Kelly Mine (New Mexico, USA), Tsumeb (Namibia)' },
+  hemimorphit: { ber: 'Ojuela Mine bei Mapimí (Mexiko), Wenshan in Yunnan (China) für blauen Hemimorphit' },
+  benitoit: { typ: 'Dallas Gem Mine, San Benito County (Kalifornien, USA)', ber: 'dieselbe Grube – praktisch der einzige Fundort für Edelsteinqualität' },
+  proustit: { ber: 'Chañarcillo (Chile), Freiberg und Schneeberg (Sachsen)' }
+};
+
+/// Fundort-Text fuer Figur und Variante
+function fundortText(w, v) {
+  const fo = FUNDORTE[w.id + ':' + v.name] || FUNDORTE[w.id];
+  if (!fo) return '–';
+  return (fo.typ ? 'Typlokalität: ' + fo.typ + '. ' : '') + 'Berühmt: ' + fo.ber + '.';
+}
+
+// ===== Hintergrund und Rendern =====
+
+const ruhig = window.matchMedia('(prefers-reduced-motion: reduce)');
+const puffer = document.createElement('canvas');
+let takt = 0;
+
+/// Pastell-Hintergrund des Farbschirms
+function hintergrund(ctx, uv) {
+  ctx.fillStyle = uv ? verlauf(ctx, 0, 0, 0, 100, ['#1c1438', '#0b0816']) : verlauf(ctx, 0, 0, 0, 100, ['#fdf9ff', '#e4ecfa']);
+  ctx.fillRect(0, 0, 100, 100);
+  const glitzer = uv ? 'rgba(190, 255, 90, 0.4)' : 'rgba(170, 150, 230, 0.4)';
+  [[12, 14, 2.4], [87, 22, 1.8], [78, 8, 1.3], [18, 40, 1.3]].forEach(([x, y, r]) => stern(ctx, x, y, r, glitzer));
+}
+
+/// Schatten am Boden
+function boden(ctx, uv, gehuepft) {
+  ctx.fillStyle = uv ? 'rgba(180, 255, 80, 0.14)' : 'rgba(70, 50, 110, 0.13)';
+  oval(ctx, 50, 93, gehuepft ? 20 : 25, 3.6);
+  ctx.fill();
+}
+
+/// Canvas in CSS-Groesse anlegen
+function bereiteCanvas(canvas, css) {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = canvas.height = Math.round(css * dpr);
+  canvas.style.width = canvas.style.height = css + 'px';
+}
+
+/// Szene zeichnen: im Pixelmodus klein vorzeichnen und hochskalieren
+function rendere(canvas, malen) {
+  const ctx = canvas.getContext('2d');
+  const groesse = canvas.width;
+
+  if (pixelModus) {
+    puffer.width = puffer.height = PIXEL_AUFLOESUNG;
+    const p = puffer.getContext('2d');
+    p.setTransform(PIXEL_AUFLOESUNG / 100, 0, 0, PIXEL_AUFLOESUNG / 100, 0, 0);
+    malen(p, PIXEL_AUFLOESUNG / 100);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, groesse, groesse);
+    ctx.drawImage(puffer, 0, 0, groesse, groesse);
+  } else {
+    ctx.setTransform(groesse / 100, 0, 0, groesse / 100, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    malen(ctx, groesse / 100);
+  }
+}
+
+// ===== Karten =====
+
+const raster = document.getElementById('raster');
+const zustaende = WESEN.map((w, i) => {
+  const karte = document.createElement('article');
+  karte.className = 'karte';
+  karte.id = 'w-' + w.id;
+  karte.innerHTML = `
+    <div class="geraet" style="--schale1:${w.schale[0]};--schale2:${w.schale[1]}">
+      <div class="bildschirm"><canvas aria-label="Bild von ${w.name}"></canvas></div>
+      <div class="knoepfe">
+        <div class="zelle"><button class="knopf" type="button" id="k-${w.id}-v" data-aktion="variante" aria-label="${w.name}: Variante wechseln"></button><span>Variante</span></div>
+        <div class="zelle"><button class="knopf" type="button" id="k-${w.id}-s" data-aktion="spezial" aria-label="${w.name}: ${w.spezial.label}"></button><span>${w.spezial.label}</span></div>
+        <div class="zelle"><button class="knopf" type="button" id="k-${w.id}-h" data-aktion="streicheln" aria-label="${w.name}: Streicheln"></button><span>Streicheln</span></div>
+      </div>
+    </div>
+    <p class="meldung" aria-live="polite"></p>
+    <h2>${w.name}</h2>
+    <p class="mineral"></p>
+    <dl class="etikett">
+      <div><dt>Formel</dt><dd data-feld="formel"></dd></div>
+      <div><dt>System</dt><dd data-feld="system"></dd></div>
+      <div><dt>Mohs</dt><dd data-feld="mohs"></dd></div>
+      <div class="fundort"><dt>Fundort</dt><dd data-feld="fundort"></dd></div>
+    </dl>
+    <div class="texte">
+      <p><span class="marke">Wesen</span>${w.wesen}</p>
+      <p><span class="marke">Pflege</span>${w.pflege}</p>
+      <p><span class="marke">Pflegefehler</span>${w.fehler}</p>
+    </div>
+    <div class="chips" role="group" aria-label="Varianten von ${w.name}">
+      ${w.varianten.map((v, n) => `<button class="chip" type="button" id="c-${w.id}-${n}" data-variante="${n}" aria-pressed="${n === 0}">${v.name}</button>`).join('')}
+    </div>`;
+  raster.appendChild(karte);
+
+  const canvas = karte.querySelector('canvas');
+  bereiteCanvas(canvas, 136);
+  if (w.uvGlut) karte.querySelector('.bildschirm').style.setProperty('--uvglow', w.uvGlut);
+
+  const zustand = {
+    karte, canvas,
+    meldung: karte.querySelector('.meldung'),
+    mineralZeile: karte.querySelector('.mineral'),
+    bildschirm: karte.querySelector('.bildschirm'),
+    geraet: karte.querySelector('.geraet'),
+    variante: 0, funkenBis: 0, herzBis: 0, schwerBis: 0, puschel: true, uv: false, doppelt: false, schiller: false
+  };
+
+  // Tasten am Geraet
+  karte.querySelectorAll('.knopf').forEach(knopf => {
+    knopf.addEventListener('click', () => fuehreAus(i, knopf.dataset.aktion));
+  });
+
+  // Varianten-Chips
+  karte.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => setzeVariante(i, Number(chip.dataset.variante)));
+  });
+
+  return zustand;
+});
+
+/// Variante setzen und Anzeige aktualisieren
+function setzeVariante(i, n) {
+  const w = WESEN[i], z = zustaende[i];
+  const v = w.varianten[n];
+  z.variante = n;
+
+  z.karte.querySelectorAll('.chip').forEach(chip => {
+    chip.setAttribute('aria-pressed', String(Number(chip.dataset.variante) === n));
+  });
+
+  // Etikett: Variante darf Mineral und Formel ueberschreiben (Malachit)
+  z.mineralZeile.textContent = `${v.mineral || w.mineral} · ${v.name}`;
+  z.karte.querySelector('[data-feld="formel"]').textContent = v.formel || w.formel;
+  z.karte.querySelector('[data-feld="system"]').textContent = v.system || w.system;
+  z.karte.querySelector('[data-feld="mohs"]').textContent = v.mohs || w.mohs;
+  z.karte.querySelector('[data-feld="fundort"]').textContent = fundortText(w, v);
+
+  z.meldung.textContent = v.notiz;
+  zeichneKarte(i);
+}
+
+/// Taste am Geraet ausfuehren
+function fuehreAus(i, aktion) {
+  const w = WESEN[i], z = zustaende[i];
+  const jetzt = Date.now();
+
+  if (aktion === 'variante') {
+    setzeVariante(i, (z.variante + 1) % w.varianten.length);
+    return;
+  }
+
+  if (aktion === 'streicheln') {
+    z.herzBis = jetzt + 1600;
+    z.meldung.textContent = `${w.name} mag das.`;
+  }
+
+  if (aktion === 'spezial') {
+    const s = w.spezial;
+
+    if (s.typ === 'funken') {
+      z.funkenBis = jetzt + 1800;
+      z.meldung.textContent = s.text;
+    } else if (s.typ === 'puschel') {
+      z.puschel = !z.puschel;
+      z.meldung.textContent = z.puschel ? s.text : s.textAus;
+    } else if (s.typ === 'uv') {
+      z.uv = !z.uv;
+      z.bildschirm.classList.toggle('uv', z.uv);
+      z.meldung.textContent = z.uv ? s.text : s.textAus;
+    } else if (s.typ === 'wackeln') {
+      z.geraet.classList.remove('schuettelt');
+      void z.geraet.offsetWidth;
+      z.geraet.classList.add('schuettelt');
+      z.meldung.textContent = s.text;
+    } else if (s.typ === 'schwer') {
+      z.schwerBis = jetzt + 2400;
+      z.meldung.textContent = s.text;
+    } else if (s.typ === 'doppelt') {
+      z.doppelt = !z.doppelt;
+      z.meldung.textContent = z.doppelt ? s.text : s.textAus;
+    } else if (s.typ === 'schiller') {
+      z.schiller = !z.schiller;
+      z.meldung.textContent = z.schiller ? s.text : s.textAus;
+    } else if (s.typ === 'wechsel') {
+      const zurueck = z.variante === s.ziel;
+      setzeVariante(i, zurueck ? 0 : s.ziel);
+      z.meldung.textContent = zurueck ? s.textAus : s.text;
+      return;
+    } else if (s.typ === 'weiter') {
+      setzeVariante(i, Math.min(z.variante + 1, w.varianten.length - 1));
+      z.meldung.textContent = s.text;
+      return;
+    } else if (s.typ === 'text') {
+      z.meldung.textContent = s.text;
+    } else if (s.typ === 'zuVariante') {
+      setzeVariante(i, s.ziel);
+      z.meldung.textContent = s.text;
+      return;
+    }
+  }
+
+  zeichneKarte(i);
+}
+
+/// Eine Karte neu zeichnen
+function zeichneKarte(i) {
+  const w = WESEN[i], z = zustaende[i];
+  const v = w.varianten[z.variante];
+  const jetzt = Date.now();
+  const uv = z.uv && !!w.uvFarben;
+  const f = Object.assign({}, v.farben, uv ? w.uvFarben : {});
+  const gehuepft = !ruhig.matches && z.schwerBis <= jetzt && takt % 2 === 1;
+  const opt = { blinzeln: (takt + i * 3) % 11 === 0, puschel: z.puschel, schiller: z.schiller, form: v.form };
+
+  rendere(z.canvas, (ctx, skala) => {
+    hintergrund(ctx, uv);
+    boden(ctx, uv, gehuepft);
+
+    // Doppelbrechung: blasses Zweitbild versetzt dahinter
+    if (z.doppelt) {
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      ctx.translate(7, 3 + (gehuepft ? -3 : 0));
+      w.male(ctx, f, opt);
+      ctx.restore();
+    }
+
+    ctx.save();
+    ctx.translate(0, gehuepft ? -3 : 0);
+
+    // Leuchten unter UV
+    if (uv) {
+      ctx.shadowColor = w.uvGlut || 'rgba(190, 255, 60, 0.9)';
+      ctx.shadowBlur = 6 * skala;
+    }
+
+    w.male(ctx, f, opt);
+    ctx.restore();
+
+    // Funken als flackernde Sterne
+    if (z.funkenBis > jetzt) {
+      (w.spezial.punkte || STANDARDFUNKEN).forEach(([x, y], n) => {
+        const farbe = Array.isArray(w.spezial.farbe) ? w.spezial.farbe[(n + takt) % w.spezial.farbe.length] : w.spezial.farbe;
+        stern(ctx, x, y, (takt + n) % 2 === 0 ? 5 : 3, farbe);
+      });
+    }
+
+    if (z.herzBis > jetzt) herz(ctx, 84, 14 + (takt % 2), 6, '#ff4f7b');
+  });
+}
+
+// ===== Schluepf-Buehne =====
+
+/// Unregelmaessige Gesteinsknolle als Pfad (Druse)
+function knollenPfad(ctx) {
+  const punkte = [];
+  for (let k = 0; k < 24; k++) {
+    const w = k / 24 * Math.PI * 2;
+    const r = 29 + 2.6 * Math.sin(3 * w + 0.6) + 1.6 * Math.cos(5 * w);
+    punkte.push([50 + Math.cos(w) * r, 60 + Math.sin(w) * r * 0.92]);
+  }
+
+  // Weich durch die Mittelpunkte der Kanten
+  ctx.beginPath();
+  ctx.moveTo((punkte[23][0] + punkte[0][0]) / 2, (punkte[23][1] + punkte[0][1]) / 2);
+  for (let k = 0; k < 24; k++) {
+    const p = punkte[k], q = punkte[(k + 1) % 24];
+    ctx.quadraticCurveTo(p[0], p[1], (p[0] + q[0]) / 2, (p[1] + q[1]) / 2);
+  }
+  ctx.closePath();
+}
+
+/// Mandelform als Pfad (Achatmandel)
+function mandelPfad(ctx) {
+  ctx.beginPath();
+  ctx.moveTo(16, 64);
+  ctx.bezierCurveTo(20, 40, 58, 30, 84, 52);
+  ctx.bezierCurveTo(86, 70, 64, 86, 44, 86);
+  ctx.bezierCurveTo(28, 86, 16, 78, 16, 64);
+  ctx.closePath();
+}
+
+// Fundstuecke: jedes bringt nur Minerale hervor, die dort auch wirklich wachsen
+const HUELLEN = [
+  {
+    typ: 'druse', name: 'Druse',
+    text: 'Eine Druse: außen eine unscheinbare Gesteinsknolle, innen hohl.',
+    textRiss: 'Es knackt! Durch den Riss glitzern Kristallspitzen.',
+    pfad: knollenPfad, rinde: ['#dccebc', '#a8957e', '#7e6c58'], umriss: '#4e3e30',
+    schnitt: '#ece6f2', innen: '#5a3a96', glitzer: '#d6b8ff', kristall2: '#a77ce8',
+    kinder: ['quarz', 'amethyst', 'calcit', 'coelestin', 'dolomit', 'aragonit']
+  },
+  {
+    typ: 'mandel', name: 'Achatmandel',
+    text: 'Eine Mandel aus Basalt: ein gefüllter Gasblasen-Hohlraum mit grünlicher Rinde aus Seladonit.',
+    textRiss: 'Es knackt! Im Riss schimmern Achatbänder.',
+    pfad: mandelPfad, rinde: ['#ccd2ba', '#8e9a78', '#5e6a4e'], umriss: '#343c2a',
+    schnitt: '#9fb0d8', innen: '#5f76b4', glitzer: '#eef1f8',
+    kinder: ['amethyst', 'quarz', 'opal', 'okenit', 'cavansit', 'stilbit', 'apophyllit', 'prehnit', 'calcit']
+  },
+  {
+    typ: 'druse', name: 'Erzgang-Stufe',
+    text: 'Ein Stück aus einem Erzgang: grauer Gangquarz mit metallisch glänzenden Einsprengseln.',
+    textRiss: 'Es knackt! Im Riss blitzt Metallglanz.',
+    pfad: knollenPfad, rinde: ['#d8d8d4', '#a4a4a0', '#74746e'], umriss: '#3a3a36', flecken: 'rgba(200, 170, 60, 0.55)',
+    schnitt: '#eeeeea', innen: '#4a4a52', glitzer: '#ffe27a', kristall2: '#c8ccd4',
+    kinder: ['galenit', 'sphalerit', 'pyrit', 'chalkopyrit', 'silber', 'gold', 'proustit', 'fluorit', 'uraninit', 'rhodochrosit']
+  },
+  {
+    typ: 'druse', name: 'Eiserner Hut',
+    text: 'Ein rostiger Brocken aus dem „Eisernen Hut“, der verwitterten Haube einer Erzlagerstätte. Hier entstehen die bunten Sekundärminerale.',
+    textRiss: 'Es knackt! Im Rost leuchtet es bunt.',
+    pfad: knollenPfad, rinde: ['#e8b880', '#b86e32', '#7a4418'], umriss: '#3e200a', flecken: 'rgba(80, 30, 0, 0.3)',
+    schnitt: '#f2d8b0', innen: '#7a4418', glitzer: '#7ad89a', kristall2: '#ff9a4a',
+    kinder: ['azurit', 'wulfenit', 'vanadinit', 'pyromorphit', 'smithsonit', 'hemimorphit', 'erythrin', 'krokoit', 'autunit', 'torbernit', 'uranocircit', 'cuprosklodowskit', 'vivianit']
+  },
+  {
+    typ: 'druse', name: 'Pegmatit-Brocken',
+    text: 'Ein Brocken Pegmatit: grobkörniger Granit mit Feldspat, Quarz und Glimmer – die Heimat großer Edelsteinkristalle.',
+    textRiss: 'Es knackt! Im Riss stecken bunte Kristallsäulen.',
+    pfad: knollenPfad, rinde: ['#f6dcd0', '#d8aa98', '#a87a6a'], umriss: '#4a2e24', flecken: 'rgba(20, 20, 20, 0.5)',
+    schnitt: '#fff2ec', innen: '#8a5e52', glitzer: '#9ae0b0', kristall2: '#ff9ab8',
+    kinder: ['turmalin', 'beryll', 'topas', 'apatit', 'orthoklas', 'granat', 'zirkon']
+  },
+  {
+    typ: 'druse', name: 'Schieferplatte',
+    text: 'Ein Stück Schiefer: Unter Druck und Hitze tief in der Erde ist hier neues Gestein entstanden.',
+    textRiss: 'Es knackt! Zwischen den Schieferlagen glänzt etwas.',
+    pfad: knollenPfad, rinde: ['#c8ccd0', '#8e949c', '#5e646c'], umriss: '#2a2e34', flecken: 'rgba(255, 255, 255, 0.45)',
+    schnitt: '#e4e8ec', innen: '#4a4e56', glitzer: '#ff8a8a', kristall2: '#c87a4a',
+    kinder: ['staurolith', 'granat', 'korund', 'talk', 'wavellit']
+  },
+  {
+    typ: 'druse', name: 'Vulkanbrocken',
+    text: 'Ein Brocken vom Vulkan, noch mit gelblichem Belag aus den heißen Gasen.',
+    textRiss: 'Es knackt! Es riecht nach Schwefel.',
+    pfad: knollenPfad, rinde: ['#e0d8a8', '#9a9070', '#5e5844'], umriss: '#2e2a1e', flecken: 'rgba(240, 220, 60, 0.55)',
+    schnitt: '#f4f0d0', innen: '#5e5844', glitzer: '#fff06a', kristall2: '#ff7a3a',
+    kinder: ['schwefel', 'realgar', 'opal']
+  },
+  {
+    typ: 'druse', name: 'Salzbrocken',
+    text: 'Ein Brocken aus einem Salzlager – der Rest eines ausgetrockneten Urmeeres.',
+    textRiss: 'Es knackt! Im Riss glitzern klare Würfel.',
+    pfad: knollenPfad, rinde: ['#f6ecec', '#d4c4c4', '#a89494'], umriss: '#4a3a3a', flecken: 'rgba(255, 140, 160, 0.35)',
+    schnitt: '#ffffff', innen: '#c8b4b8', glitzer: '#ffffff', kristall2: '#ffd0dc',
+    kinder: ['halit', 'gips', 'coelestin']
+  },
+  {
+    typ: 'druse', name: 'Magmatit-Knolle',
+    text: 'Eine dunkle Knolle aus erstarrter Gesteinsschmelze – manche stammen aus großer Tiefe.',
+    textRiss: 'Es knackt! Tief drinnen funkelt etwas.',
+    pfad: knollenPfad, rinde: ['#9a9ea8', '#5e626c', '#34363c'], umriss: '#141518', flecken: 'rgba(255, 255, 255, 0.2)',
+    schnitt: '#c8ccd4', innen: '#2a2c32', glitzer: '#bfe4ff', kristall2: '#9a8aff',
+    kinder: ['diamant', 'labradorit', 'hackmanit', 'benitoit', 'magnetit', 'zirkon']
+  }
+];
+
+/// Geschlossene Druse oder Mandel, auf Wunsch mit Riss
+function maleHuelle(ctx, h, mitRiss) {
+  h.pfad(ctx);
+  ctx.fillStyle = radial(ctx, 40, 44, 4, 50, 60, 42, h.rinde);
+  ctx.fill();
+
+  // Raue Oberflaeche
+  ctx.fillStyle = h.flecken || 'rgba(40, 30, 20, 0.22)';
+  [[38, 50, 2.2], [60, 46, 1.6], [66, 66, 2.4], [36, 72, 1.8], [52, 78, 1.5], [46, 60, 1.3], [28, 62, 1.2], [72, 58, 1.4]].forEach(([x, y, r]) => { oval(ctx, x, y, r, r * 0.8); ctx.fill(); });
+  h.pfad(ctx);
+  ctx.lineWidth = 2.4;
+  ctx.strokeStyle = h.umriss;
+  ctx.stroke();
+
+  if (!mitRiss) return;
+
+  // Riss, durch den das Innere schimmert
+  const zacken = [[20, 62], [28, 56], [35, 63], [42, 55], [50, 63], [57, 55], [64, 63], [72, 56], [80, 61]];
+  linie(ctx, zacken, h.innen, 5);
+  linie(ctx, zacken, h.glitzer, 2);
+  linie(ctx, zacken, '#2e2238', 0.9);
+  stern(ctx, 40, 50, 4, h.glitzer);
+  stern(ctx, 62, 50, 3, h.glitzer);
+}
+
+/// Offene Haelfte als Nest: hinten der Hohlraum, vorne der Rand
+function maleNest(ctx, h, vorne) {
+  if (!vorne) {
+
+    // Schnittflaeche und Hohlraum
+    oval(ctx, 50, 76, 32, 8);
+    ctx.fillStyle = h.schnitt;
+    ctx.fill();
+
+    if (h.typ === 'mandel') {
+
+      // Achatbaender bis zur Quarzmitte
+      [[27, 6, '#5f76b4'], [21, 4.6, '#eef1f8'], [15, 3.2, '#8ea2d2'], [8, 1.8, '#ffffff']].forEach(([rx, ry, farbe]) => {
+        oval(ctx, 50, 77, rx, ry);
+        ctx.fillStyle = farbe;
+        ctx.fill();
+      });
+    } else {
+
+      // Amethystspitzen im Hohlraum
+      oval(ctx, 50, 77, 27, 6);
+      ctx.fillStyle = h.innen;
+      ctx.fill();
+      for (let x = 28; x <= 72; x += 5) {
+        const hoehe = 4 + (x * 7) % 4;
+        flaeche(ctx, [[x - 2.4, 79], [x, 79 - hoehe], [x + 2.4, 79]], (x / 5) % 2 ? h.glitzer : (h.kristall2 || '#a77ce8'));
+      }
+    }
+    return;
+  }
+
+  // Vorderer Rand der Schale
+  ctx.beginPath();
+  ctx.ellipse(50, 76, 32, 8, 0, Math.PI, 0, true);
+  ctx.quadraticCurveTo(82, 97, 50, 97);
+  ctx.quadraticCurveTo(18, 97, 18, 76);
+  ctx.closePath();
+  ctx.fillStyle = radial(ctx, 40, 82, 3, 50, 86, 34, h.rinde);
+  ctx.fill();
+  ctx.lineWidth = 2.2;
+  ctx.strokeStyle = h.umriss;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(50, 76, 32, 8, 0, Math.PI, 0, true);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = h.schnitt;
+  ctx.stroke();
+}
+
+/// Druschi, der Kristallkeim; als Jungkristall schon in den Farben seines Ziels
+function maleDruschi(ctx, o, ziel) {
+  let f = { c: '#d9ccf2', o: '#4a3a6a', a: '#e2ccff', b: '#b48af0' };
+  let bauch = ['#ffffff', '#efe6ff', '#ddd0f5'];
+
+  // Farben des spaeteren Minerals uebernehmen
+  if (ziel) {
+    const a = ziel.a || ziel.oben1 || ziel.koerper2 || ziel.top || ziel.hell;
+    const b = ziel.b || ziel.oben2 || ziel.c || a;
+    f = { c: b, o: ziel.o || f.o, a, b, dunkel: ziel.dunkel, wange: ziel.wange };
+    bauch = ['#ffffff', a, b];
+  }
+
+  fuesse(ctx, 43, 57, 90, f);
+  kristall(ctx, 50, 38, 6, 64, f);
+  oval(ctx, 50, 73, 19, 15);
+  ctx.fillStyle = radial(ctx, 44, 66, 2, 50, 73, 20, bauch);
+  ctx.fill();
+  ctx.lineWidth = 2.2;
+  ctx.strokeStyle = f.o;
+  ctx.stroke();
+  gesicht(ctx, 50, 73, 0.8, f, o);
+}
+
+const buehne = {
+  canvas: document.getElementById('buehne'),
+  rahmen: document.getElementById('buehnenRahmen'),
+  text: document.getElementById('buehnenText'),
+  knopf: document.getElementById('buehnenKnopf'),
+  phase: 0, ei: 0, erwachsen: 0
+};
+bereiteCanvas(buehne.canvas, 176);
+
+// Ablauf: 0 Fundstueck, 1 Riss, 2 Keim, 3 Jungkristall, 4 erwachsen, 5 Jahre spaeter
+const PHASENDAUER = [2600, 2400, 3000, 3000, 4200, 4200];
+let buehneAuto = true;
+let buehneSeit = Date.now();
+
+/// Hat das Mineral eine echte Umwandlung (Pflegefehler-Variante)?
+function hatUmwandlung(w) {
+  return w.spezial.typ === 'zuVariante' || w.spezial.typ === 'weiter';
+}
+
+/// Variante nach der Umwandlung
+function umwandlungsVariante(w) {
+  return w.spezial.typ === 'weiter' ? w.varianten.length - 1 : w.spezial.ziel;
+}
+
+/// Neues Fundstueck und passendes Mineral aus seiner Familie waehlen
+function neuerFund() {
+  buehne.ei = Math.floor(Math.random() * HUELLEN.length);
+  const kinder = HUELLEN[buehne.ei].kinder;
+  const id = kinder[Math.floor(Math.random() * kinder.length)];
+  buehne.erwachsen = Math.max(0, WESEN.findIndex(w => w.id === id));
+}
+
+/// Buehnen-Phase anzeigen
+function zeigePhase() {
+  const h = HUELLEN[buehne.ei];
+  const w = WESEN[buehne.erwachsen];
+  const texte = [
+    h.text,
+    h.textRiss,
+    'Druschi ist geschlüpft und sitzt noch in seinem Fundstück.',
+    'Druschi wächst heran und nimmt die Farben seiner Umgebung an. Was wird es wohl?',
+    `Aus Druschi wurde ${w.name} – typisch für den Fund „${h.name}“.`,
+    `Jahre später: ${w.spezial.text}`
+  ];
+  buehne.text.textContent = texte[buehne.phase];
+  buehne.knopf.textContent = buehneAuto ? 'Anhalten' : 'Weiterlaufen';
+  buehne.rahmen.classList.toggle('wackelt', buehne.phase < 2 && !ruhig.matches);
+  zeichneBuehne();
+}
+
+/// Buehne zeichnen
+function zeichneBuehne() {
+  const gehuepft = !ruhig.matches && takt % 2 === 1;
+  const blinzeln = takt % 9 === 0;
+
+  const h = HUELLEN[buehne.ei];
+  const w = WESEN[buehne.erwachsen];
+
+  rendere(buehne.canvas, ctx => {
+    hintergrund(ctx, false);
+    boden(ctx, false, buehne.phase >= 4 && gehuepft);
+
+    // Geschlossen oder mit Riss
+    if (buehne.phase <= 1) {
+      maleHuelle(ctx, h, buehne.phase === 1);
+      return;
+    }
+
+    // Keim und Jungkristall sitzen in der offenen Haelfte
+    if (buehne.phase <= 3) {
+      maleNest(ctx, h, false);
+      ctx.save();
+      ctx.translate(0, (gehuepft ? -3 : 0) - 6);
+      if (buehne.phase === 3) {
+        ctx.translate(50, 90);
+        ctx.scale(1.18, 1.18);
+        ctx.translate(-50, -90);
+        maleDruschi(ctx, { blinzeln }, w.varianten[0].farben);
+      } else {
+        maleDruschi(ctx, { blinzeln });
+      }
+      ctx.restore();
+      maleNest(ctx, h, true);
+      return;
+    }
+
+    // Erwachsen, in Phase 5 nach der Umwandlung
+    const v = buehne.phase === 5 ? w.varianten[umwandlungsVariante(w)] : w.varianten[0];
+    ctx.save();
+    ctx.translate(0, gehuepft ? -3 : 0);
+    w.male(ctx, v.farben, { blinzeln, puschel: true, form: v.form });
+    ctx.restore();
+  });
+}
+
+/// Naechste Phase; "Jahre spaeter" nur bei echter Umwandlung, danach neuer Fund
+function naechstePhase() {
+  buehne.phase++;
+
+  if (buehne.phase === 5 && !hatUmwandlung(WESEN[buehne.erwachsen])) buehne.phase = 6;
+
+  if (buehne.phase >= 6) {
+    buehne.phase = 0;
+    neuerFund();
+  }
+
+  buehneSeit = Date.now();
+  zeigePhase();
+}
+
+// Anhalten und Weiterlaufen
+buehne.knopf.addEventListener('click', () => {
+  buehneAuto = !buehneAuto;
+  buehneSeit = Date.now();
+  zeigePhase();
+});
+
+// Von Hand einen Schritt weiter
+document.getElementById('buehnenSchritt').addEventListener('click', naechstePhase);
+
+// ===== Bildschirmmodus =====
+
+const modusPixel = document.getElementById('modusPixel');
+const modusGlatt = document.getElementById('modusGlatt');
+
+/// Zwischen Farb-Pixel und glatter Darstellung wechseln
+function setzeModus(pixel) {
+  pixelModus = pixel;
+  modusPixel.setAttribute('aria-pressed', String(pixel));
+  modusGlatt.setAttribute('aria-pressed', String(!pixel));
+  WESEN.forEach((w, i) => zeichneKarte(i));
+  zeichneBuehne();
+}
+modusPixel.addEventListener('click', () => setzeModus(true));
+modusGlatt.addEventListener('click', () => setzeModus(false));
+
+// ===== Start =====
+
+// Anzahl im Kopf aus der Liste
+document.getElementById('anzahl').textContent = WESEN.length;
+document.getElementById('anzahlZyklus').textContent = WESEN.length;
+
+// ===== Filter nach Familien =====
+
+const FAMILIEN = [
+  { key: 'alle', name: 'Alle', ids: null },
+  { key: 'quarz', name: 'Quarzfamilie', ids: ['quarz', 'amethyst', 'opal'] },
+  { key: 'uran', name: 'Uranminerale', ids: ['uraninit', 'autunit', 'torbernit', 'uranocircit', 'cuprosklodowskit'] },
+  { key: 'erze', name: 'Erze und Metalle', ids: ['gold', 'silber', 'galenit', 'sphalerit', 'pyrit', 'chalkopyrit', 'magnetit', 'proustit', 'uraninit', 'azurit', 'wulfenit', 'vanadinit', 'pyromorphit', 'smithsonit', 'hemimorphit'] },
+  { key: 'mohs', name: 'Mohs-Skala', ids: ['talk', 'gips', 'calcit', 'fluorit', 'apatit', 'orthoklas', 'quarz', 'topas', 'korund', 'diamant'] },
+  { key: 'edel', name: 'Edelsteine', ids: ['diamant', 'korund', 'beryll', 'topas', 'turmalin', 'granat', 'zirkon', 'opal', 'amethyst', 'benitoit'] },
+  { key: 'drusen', name: 'Drusenbewohner', ids: ['amethyst', 'okenit', 'cavansit', 'stilbit', 'apophyllit', 'prehnit', 'coelestin'] },
+  { key: 'uv', name: 'Leuchten unter UV', ids: WESEN.filter(w => w.spezial.typ === 'uv').map(w => w.id).concat(['hackmanit']) },
+  { key: 'licht', name: 'Lichtempfindlich', ids: ['vivianit', 'realgar', 'proustit', 'vanadinit', 'amethyst', 'hackmanit'] },
+  { key: 'sachsen', name: 'Sachsen', ids: ['torbernit', 'uranocircit', 'erythrin', 'silber', 'galenit', 'uraninit', 'topas', 'wavellit', 'proustit'] }
+];
+
+const filterLeiste = document.getElementById('filter');
+filterLeiste.innerHTML = FAMILIEN.map(fam => `<button class="chip" type="button" id="f-${fam.key}" data-familie="${fam.key}" aria-pressed="${fam.key === 'alle'}">${fam.name}</button>`).join('') + '<span class="zaehler" id="filterZaehler" aria-live="polite"></span>';
+
+/// Nur die Karten einer Familie zeigen
+function setzeFilter(key) {
+  const fam = FAMILIEN.find(x => x.key === key);
+  let sichtbar = 0;
+
+  filterLeiste.querySelectorAll('.chip').forEach(chip => chip.setAttribute('aria-pressed', String(chip.dataset.familie === key)));
+
+  WESEN.forEach((w, i) => {
+    const zeigen = !fam.ids || fam.ids.includes(w.id);
+    zustaende[i].karte.hidden = !zeigen;
+    if (zeigen) {
+      sichtbar++;
+      zeichneKarte(i);
+    }
+  });
+
+  document.getElementById('filterZaehler').textContent = `${sichtbar} von ${WESEN.length}`;
+}
+
+filterLeiste.querySelectorAll('.chip').forEach(chip => chip.addEventListener('click', () => setzeFilter(chip.dataset.familie)));
+setzeFilter('alle');
+
+// ===== Paragenesen-Labor =====
+
+const BEDINGUNGEN = [
+  { key: 'heisswasser', name: 'Heißes Wasser im Gestein (hydrothermal)', kurz: 'heißes Wasser im Gestein' },
+  { key: 'verwitterung', name: 'Wasser und Luft (Verwitterung)', kurz: 'Wasser und Luft' },
+  { key: 'druck', name: 'Hitze und Druck (Metamorphose)', kurz: 'Hitze und Druck' },
+  { key: 'schmelze', name: 'Abkühlende Schmelze (Magma, Pegmatit)', kurz: 'eine abkühlende Schmelze' },
+  { key: 'verdunstung', name: 'Verdunstung (Salzsee, Meer)', kurz: 'verdunstendes Wasser' }
+];
+
+// Paragenesen: wachsen gemeinsam zu einer Stufe
+const PARAGENESEN = [
+  { ids: ['galenit', 'sphalerit'], bed: 'heisswasser', text: 'Bleiglanz und Zinkblende wachsen fast immer zusammen in Erzgängen – kein Wunder, dass Bergleute sie verwechselten.' },
+  { ids: ['galenit', 'fluorit'], bed: 'heisswasser', lage: 'auf', wirt: 'fluorit', text: 'Ein Klassiker aus Erzgängen, zum Beispiel aus Weardale in England.' },
+  { ids: ['chalkopyrit', 'sphalerit'], bed: 'heisswasser', lage: 'auf', wirt: 'sphalerit', text: 'Kupferkies und Zinkblende teilen sich oft denselben Erzgang.' },
+  { ids: ['pyrit', 'quarz'], bed: 'heisswasser', lage: 'auf', wirt: 'quarz', text: 'Goldglänzende Pyritwürfel auf klarem Bergkristall.' },
+  { ids: ['gold', 'quarz'], bed: 'heisswasser', lage: 'in', wirt: 'quarz', text: 'Gold sitzt gern in weißem Gangquarz – Goldsucher halten nach solchen Quarzgängen Ausschau.' },
+  { ids: ['silber', 'proustit'], bed: 'heisswasser', text: 'Freiberger Silbererze: gediegen Silber und Rotgültigerz gemeinsam.' },
+  { ids: ['fluorit', 'quarz'], bed: 'heisswasser', lage: 'auf', wirt: 'quarz', text: 'Bunte Fluoritwürfel zwischen Quarzspitzen.' },
+  { ids: ['amethyst', 'calcit'], bed: 'heisswasser', lage: 'auf', wirt: 'amethyst', text: 'In brasilianischen Geoden sitzen oft Calcitkristalle auf dem Amethyst.' },
+  { ids: ['cavansit', 'stilbit'], bed: 'heisswasser', lage: 'auf', wirt: 'stilbit', text: 'Blaue Cavansit-Kugeln auf weißem Stilbit – die berühmte Stufe aus Pune.' },
+  { ids: ['okenit', 'apophyllit'], bed: 'heisswasser', text: 'Wattebäusche neben klaren Kristallen in indischen Basaltdrusen.' },
+  { ids: ['apophyllit', 'stilbit'], bed: 'heisswasser', lage: 'auf', wirt: 'stilbit', text: 'Apophyllit auf pfirsichfarbenem Stilbit, ebenfalls aus Indien.' },
+  { ids: ['turmalin', 'quarz'], bed: 'schmelze', lage: 'in', wirt: 'quarz', text: 'In Pegmatiten stecken Turmalinsäulen mitten im Quarz.' },
+  { ids: ['beryll', 'orthoklas'], bed: 'schmelze', lage: 'auf', wirt: 'orthoklas', text: 'Beryll wächst in Pegmatiten zwischen großen Feldspatkristallen.' },
+  { ids: ['topas', 'quarz'], bed: 'schmelze', text: 'Topas und Rauchquarz – wie am Schneckenstein im Vogtland.' },
+  { ids: ['diamant', 'granat'], bed: 'schmelze', lage: 'in', wirt: 'diamant', text: 'Rote Granate im Kimberlit verraten, dass Diamanten in der Nähe sein könnten. Manchmal steckt sogar ein winziger Granat als Einschluss im Diamanten.' },
+  { ids: ['granat', 'staurolith'], bed: 'druck', text: 'Beide wachsen gemeinsam im Glimmerschiefer, wenn Gestein tief unter der Erde umgewandelt wird.' },
+  { ids: ['korund', 'calcit'], bed: 'druck', lage: 'in', wirt: 'calcit', text: 'Rubine aus Mogok wachsen in Marmor – umgewandeltem Kalkstein.' },
+  { ids: ['halit', 'gips'], bed: 'verdunstung', text: 'Verdunstet Meerwasser, fallen erst Gips und dann Steinsalz aus.' },
+  { ids: ['schwefel', 'coelestin'], bed: 'verdunstung', lage: 'auf', wirt: 'schwefel', text: 'Knallgelber Schwefel mit weißem Coelestin – die Klassiker aus Sizilien.' },
+  { ids: ['hemimorphit', 'smithsonit'], bed: 'verwitterung', lage: 'auf', wirt: 'smithsonit', text: 'Zusammen bildeten sie das Zinkerz, das Bergleute „Galmei“ nannten.' }
+];
+
+// Nachwuchs: aus zwei Eltern entsteht bei Verwitterung ein neues Mineral
+const REAKTIONEN = [
+  { ids: ['chalkopyrit', 'calcit'], bed: 'verwitterung', kind: 'azurit', text: 'Kupfer aus dem Kupferkies trifft auf Carbonat aus dem Calcit.' },
+  { ids: ['sphalerit', 'calcit'], bed: 'verwitterung', kind: 'smithsonit', text: 'Zink aus der Zinkblende trifft auf Carbonat.' },
+  { ids: ['sphalerit', 'quarz'], bed: 'verwitterung', kind: 'hemimorphit', text: 'Zink trifft auf gelöste Kieselsäure aus dem Quarz.' },
+  { ids: ['galenit', 'apatit'], bed: 'verwitterung', kind: 'pyromorphit', text: 'Blei aus dem Bleiglanz trifft auf Phosphat aus dem Apatit.' },
+  { ids: ['uraninit', 'apatit'], bed: 'verwitterung', kind: 'autunit', text: 'Uran trifft auf Calcium und Phosphat aus dem Apatit.' },
+  { ids: ['uraninit', 'chalkopyrit'], bed: 'verwitterung', kind: 'torbernit', text: 'Uran trifft auf Kupfer, das Phosphat bringt das Grundwasser mit.' }
+];
+
+const ALLE_KOMBIS = PARAGENESEN.map(p => Object.assign({ art: 'stufe' }, p)).concat(REAKTIONEN.map(r => Object.assign({ art: 'reaktion' }, r)));
+const SPEICHERSCHLUESSEL = 'mineraltchi-entdeckt';
+const laborA = document.getElementById('laborA');
+const laborB = document.getElementById('laborB');
+const laborBedingung = document.getElementById('laborBedingung');
+const laborCanvas = document.getElementById('laborCanvas');
+const labor = { ergebnis: null };
+bereiteCanvas(laborCanvas, 176);
+
+/// Schluessel fuer ein Paar, unabhaengig von der Reihenfolge
+function paarSchluessel(a, b) {
+  return [a, b].sort().join('+');
+}
+
+/// Entdeckte Kombinationen aus dem Browser lesen
+function liesEntdeckt() {
+  try { return JSON.parse(localStorage.getItem(SPEICHERSCHLUESSEL) || '[]'); } catch (e) { return []; }
+}
+
+/// Entdeckte Kombination merken
+function merkeEntdeckt(schluessel) {
+  const liste = liesEntdeckt();
+  if (liste.includes(schluessel)) return;
+  liste.push(schluessel);
+  try { localStorage.setItem(SPEICHERSCHLUESSEL, JSON.stringify(liste)); } catch (e) { /* Speicher nicht verfuegbar */ }
+}
+
+/// Figur nach Id
+function wesenNach(id) {
+  return WESEN.find(w => w.id === id);
+}
+
+// Auswahllisten fuellen, alphabetisch nach Name
+const sortiert = WESEN.slice().sort((x, y) => x.name.localeCompare(y.name, 'de'));
+[laborA, laborB].forEach(sel => { sel.innerHTML = sortiert.map(w => `<option value="${w.id}">${w.name} (${w.mineral})</option>`).join(''); });
+laborBedingung.innerHTML = BEDINGUNGEN.map(b => `<option value="${b.key}">${b.name}</option>`).join('');
+laborA.value = 'galenit';
+laborB.value = 'apatit';
+laborBedingung.value = 'verwitterung';
+
+/// Sammlung der entdeckten Kombinationen anzeigen
+function zeigeSammlung() {
+  const entdeckt = liesEntdeckt();
+  const liste = document.getElementById('laborListe');
+  let anzahl = 0;
+
+  liste.innerHTML = ALLE_KOMBIS.map((k, n) => {
+    const schluessel = paarSchluessel(k.ids[0], k.ids[1]);
+    if (!entdeckt.includes(schluessel)) return `<span class="chip unbekannt">???</span>`;
+    anzahl++;
+    const namen = k.ids.map(id => wesenNach(id).name).join(' + ');
+    const zusatz = k.art === 'reaktion' ? ' → ' + wesenNach(k.kind).name : '';
+    return `<button class="chip" type="button" id="kombi-${n}" data-kombi="${n}">${namen}${zusatz}</button>`;
+  }).join('');
+
+  document.getElementById('laborZaehler').textContent = `${anzahl} von ${ALLE_KOMBIS.length}`;
+
+  // Entdeckte Kombination erneut ansehen
+  liste.querySelectorAll('[data-kombi]').forEach(chip => chip.addEventListener('click', () => {
+    const k = ALLE_KOMBIS[Number(chip.dataset.kombi)];
+    laborA.value = k.ids[0];
+    laborB.value = k.ids[1];
+    laborBedingung.value = k.bed;
+    bringeZusammen();
+  }));
+}
+
+/// Zwei Mineraltchi unter den gewaehlten Bedingungen zusammenbringen
+function bringeZusammen() {
+  const a = laborA.value, b = laborB.value, bed = laborBedingung.value;
+  const wa = wesenNach(a), wb = wesenNach(b);
+  const ausgabe = document.getElementById('laborErgebnis');
+  const schluessel = paarSchluessel(a, b);
+  const treffer = ALLE_KOMBIS.filter(k => paarSchluessel(k.ids[0], k.ids[1]) === schluessel);
+  const passend = treffer.find(k => k.bed === bed);
+
+  // Zwei Gleiche wachsen einfach zur Gruppe
+  if (a === b) {
+    labor.ergebnis = { art: 'stufe', a, b };
+    ausgabe.textContent = `Zwei ${wa.name} wachsen einfach zu einer größeren Gruppe zusammen.`;
+    return;
+  }
+
+  // Passende Bedingung: Stufe oder Nachwuchs
+  if (passend) {
+
+    // Wer traegt wen: Wirt unten bzw. aussen, Gast drauf bzw. drin
+    const lage = passend.lage || 'neben';
+    const wirt = passend.wirt || a;
+    const gast = wirt === a ? b : a;
+    labor.ergebnis = { art: passend.art, a, b, kind: passend.kind, lage, wirt, gast };
+    merkeEntdeckt(schluessel);
+    zeigeSammlung();
+
+    // Beschreibung je nach Lage
+    const wirtName = wesenNach(wirt).name, gastName = wesenNach(gast).name;
+    const lageText = lage === 'auf' ? `${gastName} wächst auf ${wirtName}.`
+      : lage === 'in' ? `${gastName} steckt als Einschluss in ${wirtName}.`
+      : `${wa.name} und ${wb.name} wachsen nebeneinander zu einer Stufe zusammen.`;
+    ausgabe.textContent = passend.art === 'reaktion'
+      ? `Nachwuchs! ${passend.text} Es entsteht ${wesenNach(passend.kind).name}.`
+      : `Paragenese! ${lageText} ${passend.text}`;
+    return;
+  }
+
+  // Paar passt, aber falsche Bedingung: Tipp geben
+  labor.ergebnis = { art: 'nichts', a, b };
+  if (treffer.length) {
+    const richtige = BEDINGUNGEN.find(x => x.key === treffer[0].bed);
+    ausgabe.textContent = `Hier passiert nichts. ${wa.name} und ${wb.name} passen zwar zusammen, brauchen aber ${richtige.kurz}.`;
+  } else {
+    ausgabe.textContent = `${wa.name} und ${wb.name} findet man in der Natur kaum zusammen – sie bleiben lieber unter sich.`;
+  }
+}
+
+/// Figur verkleinert an eine Stelle zeichnen
+function maleKlein(ctx, w, cx, unten, s, opt) {
+  const v = w.varianten[0];
+  ctx.save();
+  ctx.translate(cx - 50 * s, unten - 92 * s);
+  ctx.scale(s, s);
+  w.male(ctx, v.farben, Object.assign({ puschel: true, form: v.form }, opt));
+  ctx.restore();
+}
+
+/// Gast als Einschluss im Wirt zeichnen (Gast wird auf die Wirtsform zugeschnitten)
+function maleEinschluss(ctx, wirt, gast, opt) {
+  const ebene = document.createElement('canvas');
+  ebene.width = ctx.canvas.width;
+  ebene.height = ctx.canvas.height;
+  const ectx = ebene.getContext('2d');
+  ectx.imageSmoothingEnabled = ctx.imageSmoothingEnabled;
+  ectx.setTransform(ctx.getTransform());
+
+  // Wirt zeichnen
+  maleKlein(ectx, wirt, 50, 92, 0.74, opt);
+
+  // Gast nur dort, wo der Wirt ist, leicht durchscheinend
+  ectx.globalCompositeOperation = 'source-atop';
+  ectx.globalAlpha = 0.85;
+  maleKlein(ectx, gast, 50, 90, 0.34, { blinzeln: takt % 10 === 5 });
+
+  // Wirt als Glasur darueber, damit der Gast "drinsteckt"
+  ectx.globalAlpha = 0.3;
+  maleKlein(ectx, wirt, 50, 92, 0.74, opt);
+
+  // Ebene auf das Labor-Bild uebertragen
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(ebene, 0, 0);
+  ctx.restore();
+}
+
+/// Labor-Bild zeichnen
+function zeichneLabor() {
+  const wa = wesenNach(laborA.value), wb = wesenNach(laborB.value);
+  const e = labor.ergebnis;
+  const hoch = !ruhig.matches && takt % 2 === 1 ? -2 : 0;
+  const opt = { blinzeln: takt % 10 === 0 };
+
+  rendere(laborCanvas, ctx => {
+    hintergrund(ctx, false);
+
+    // Stufe: beide gemeinsam auf einem Stueck Muttergestein
+    if (e && e.art === 'stufe') {
+      oval(ctx, 50, 88, 44, 9);
+      ctx.fillStyle = verlauf(ctx, 0, 80, 0, 97, ['#b8aa98', '#7e6e5c']);
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#3e3226';
+      ctx.stroke();
+      const wirt = wesenNach(e.wirt || e.a), gast = wesenNach(e.gast || e.b);
+
+      // Aufgewachsen: Wirt gross, Gaeste sitzen oben an seinem Rand
+      if (e.lage === 'auf') {
+        maleKlein(ctx, wirt, 46, 91, 0.7, opt);
+        maleKlein(ctx, gast, 74, 52 + hoch, 0.3, opt);
+        maleKlein(ctx, gast, 24, 64, 0.22, { blinzeln: takt % 10 === 5 });
+      }
+
+      // Eingeschlossen: Gast nur innerhalb der Wirtsfigur sichtbar
+      else if (e.lage === 'in') {
+        maleEinschluss(ctx, wirt, gast, opt);
+      }
+
+      // Nebeneinander verwachsen
+      else {
+        maleKlein(ctx, wa, 32, 90, 0.52, opt);
+        maleKlein(ctx, wb, 68, 90, 0.52, opt);
+      }
+
+      [[16, 20], [84, 16], [50, 10]].forEach(([x, y], n) => stern(ctx, x, y, (takt + n) % 2 ? 4 : 2.5, '#ffd23a'));
+      return;
+    }
+
+    boden(ctx, false, false);
+
+    // Nachwuchs: Eltern klein an den Seiten, Kind in der Mitte
+    if (e && e.art === 'reaktion') {
+      maleKlein(ctx, wa, 18, 94, 0.36, opt);
+      maleKlein(ctx, wb, 82, 94, 0.36, opt);
+      maleKlein(ctx, wesenNach(e.kind), 50, 86 + hoch, 0.62, opt);
+      [[30, 22], [70, 18], [50, 8], [22, 50], [78, 46]].forEach(([x, y], n) => stern(ctx, x, y, (takt + n) % 2 ? 4.5 : 2.5, '#ff9ad2'));
+      return;
+    }
+
+    // Vorschau oder nichts passiert: beide stehen nebeneinander
+    maleKlein(ctx, wa, 28, 92, 0.5, opt);
+    maleKlein(ctx, wb, 72, 92 + (e ? 0 : hoch), 0.5, opt);
+  });
+}
+
+// Auswahl aendern setzt das Ergebnis zurueck
+[laborA, laborB, laborBedingung].forEach(sel => sel.addEventListener('change', () => {
+  labor.ergebnis = null;
+  document.getElementById('laborErgebnis').textContent = 'Bereit. Drück auf „Zusammenbringen“.';
+  zeichneLabor();
+}));
+document.getElementById('laborStart').addEventListener('click', () => { bringeZusammen(); zeichneLabor(); });
+
+document.getElementById('laborErgebnis').textContent = 'Probier zum Beispiel Bleiglanz und Apatit bei Verwitterung – oder entdecke selbst, wer zu wem passt.';
+zeigeSammlung();
+zeichneLabor();
+
+neuerFund();
+zeigePhase();
+WESEN.forEach((w, i) => setzeVariante(i, 0));
+
+// Takt fuer Huepfen, Blinzeln und Funken
+setInterval(() => {
+  takt++;
+
+  // Buehne laeuft von selbst weiter
+  if (buehneAuto && Date.now() - buehneSeit > PHASENDAUER[buehne.phase]) naechstePhase();
+
+  // Nur sichtbare Karten zeichnen
+  WESEN.forEach((w, i) => { if (!zustaende[i].karte.hidden) zeichneKarte(i); });
+  zeichneBuehne();
+  zeichneLabor();
+}, 480);
+</script>
