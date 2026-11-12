@@ -68,7 +68,28 @@ h1 { font-family: var(--f-display); font-weight: 400; font-size: 1.9rem; margin:
 .slot .anzahl { position: absolute; right: 3px; bottom: 0; font: 500 .72rem var(--f-mono); color: var(--ink); text-shadow: 0 0 3px var(--bg), 0 0 3px var(--bg), 0 0 3px var(--bg); }
 .vorrat { font: 500 .84rem var(--f-mono); color: var(--muted); }
 
+/* Sammlungsvitrine: Holzrahmen, Glasboeden, Etiketten wie bei echten Sammlungen */
+.vitrine { border-radius: 16px; padding: 10px 12px 14px; background: linear-gradient(180deg, #7a5432, #5a3b22); border: 3px solid #3e2814; box-shadow: inset 0 0 0 2px rgba(255, 230, 190, .15); color: #fbf1df; }
+.vitrine summary { cursor: pointer; list-style: none; display: flex; align-items: baseline; gap: 10px; }
+.vitrine summary::-webkit-details-marker { display: none; }
+.vitrine summary::before { content: '▸'; transition: transform .15s; }
+.vitrine[open] summary::before { transform: rotate(90deg); }
+.vitrinentitel { font-family: var(--f-display); font-size: 1.15rem; }
+.vitrine .klein { color: #e8d6b8; }
+.vitrinenhinweis { font-size: .8rem; color: #e8d6b8; margin: 6px 0 10px; }
+.regal { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 0; background: linear-gradient(180deg, rgba(210, 235, 255, .10), rgba(210, 235, 255, .03)); border-radius: 8px; overflow: hidden; }
+.fach { position: relative; display: flex; flex-direction: column; align-items: center; padding: 6px 2px 4px; border-bottom: 5px solid rgba(220, 240, 255, .28); box-shadow: 0 3px 0 rgba(0, 0, 0, .25); min-height: 104px; }
+.fach canvas { display: block; }
+.fach .etikett { margin-top: 2px; max-width: 74px; background: #fffbea; color: #3a2a18; font: 500 .62rem/1.15 var(--f-body); padding: 2px 4px; border-radius: 2px; text-align: center; box-shadow: 0 1px 2px rgba(0, 0, 0, .35); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fach.leer { opacity: .45; }
+.fach.leer .platz { width: 54px; height: 54px; margin: 5px 0; border: 2px dashed rgba(255, 240, 220, .5); border-radius: 10px; display: grid; place-items: center; font: 600 1.1rem var(--f-display); color: rgba(255, 240, 220, .7); }
+
 .seite { display: flex; flex-direction: column; gap: 12px; }
+
+/* Breite Bildschirme: rechte Leiste bleibt stehen und scrollt fuer sich, die Seite scrollt nicht mit */
+@media (min-width: 921px) {
+  .seite { position: sticky; top: 10px; max-height: calc(100vh - 20px); overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+}
 .feld { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
 .feld h2 { font-family: var(--f-display); font-weight: 400; font-size: 1.1rem; margin: 0 0 8px; }
 .feld h3 { font-size: .9rem; margin: 12px 0 6px; }
@@ -128,10 +149,19 @@ kbd { font: .76rem var(--f-mono); border: 1px solid var(--line); border-radius: 
         <button class="knopf aktiv" id="modusGraben" type="button" title="Hauen mit Schlägel und Eisen">⚒ Hauen</button>
         <button class="knopf" id="modusBauen" type="button">Bauen</button>
         <button class="knopf aktiv" id="geleuchtKnopf" type="button" title="Geleucht am Helm an oder aus (L)">Geleucht</button>
+        <button class="knopf" id="uvKnopf" type="button" title="UV-Lampe an oder aus (U)">UV</button>        <button class="knopf" id="kippKnopf" type="button" title="Gesammeltes Gestein vor dir abkippen (K)">Abkippen</button>
       </div>
       <div class="hotbar" id="hotbar"></div>
       <span class="vorrat" id="vorrat"></span>
     </div>
+
+    <details class="vitrine" open>
+      <summary><span class="vitrinentitel">Sammlung</span> <span class="klein" id="sammlungZaehler"></span></summary>
+      <p class="vitrinenhinweis">Von jeder Art kommt das schönste Stück in die Vitrine: perfekt gepflegt (satt, glänzend, gut gelaunt), sauber, nicht angeätzt und auf einem Ständer präsentiert. Hier bleibt es für immer so, auch über neue Welten hinweg.</p>
+      <div class="regal" id="sammlungRegal"></div>
+      <p class="vitrinenhinweis"><b>Stufen</b> <span id="stufenZaehler"></span> – zusammengewachsene Paragenesen, beide Partner perfekt gepflegt und auf einem Ständer.</p>
+      <div class="regal" id="stufenRegal"></div>
+    </details>
 
     <details class="feld hilfe" open>
       <summary>Steuerung und Ziele</summary>
@@ -142,10 +172,17 @@ kbd { font: .76rem var(--f-mono); border: 1px solid var(--line); border-radius: 
         <li><b>Schießen</b>: Dynamit wählen und setzen – nach drei Sekunden kracht es und das Gestein ringsum ist los. Fundstücke zerspringen dabei, und Mineraltchi in der Nähe erschrecken sich. Gelegtes Dynamit kann man wieder abhauen, solange die Zündschnur brennt.</li>
         <li>Unter Tage brennt das Geleucht am Bergbauhelm, mit <kbd>L</kbd> schaltest du es aus. Für dauerhaftes Licht hängst du Geleuchte (Froschlampen) in die Strecke.</li>
         <li><b>Steinbruch</b> (rechts vom Erzgang): eine Basaltgrube, deren Sohlen stufenweise in die Tiefe gehen, ganz unten ein kleiner Steinbruchsee. Gegenüber steht die hohe Bruchwand im Anstehenden – mit Klüften voller Achatmandeln. Mit dem <b>Seil</b> kommst du die Sohlen hinunter und wieder hinauf und an die Klüfte in der Wand: oben an der Kante einhängen, es hängt bis zum Boden. Abhauen nimmt es wieder ab.</li>
-        <li>Der <b>Steinbruchbesitzer</b> macht seine Runden und darf dich nicht entdecken (rot: sein Blickfeld). Versteck dich hinter Fels. Nachts schläft er meist in der Bude – aber ein brennendes Geleucht sieht er von Weitem. Erwischt er dich, kassiert er die Funde und den Basalt aus dem Bruch ein, zieht deine Seile heraus und behält sie samt denen im Vorrat, und das Dynamit nimmt er auch. Draußen vor dem Gelände ist deine Beute sicher. Und ein Knall lockt ihn sofort an.</li>
-        <li><b>Altbergbau</b> (links vom Erzgang, hinter der Halde): Gleich hinter dem Mundloch ist der Stollen verbrochen, darüber liegt eine Pinge voller Schutt. Über die alte Fahrt am Mundloch kommst du auf den Hang. Unter der Stollensohle gibt es die 1. Sohle (eine Strecke bis zum alten Ort mit stehengelassenem Erz) und tiefer die 2. Sohle mit der Weitung. Loser Verbruch rutscht nach – wer darunter steht, bekommt Steinschlag ab. Im Stollen halten morsche Türstöcke die Firste: Haust oder sprengst du einen weg, bricht sie herein. Hinten führt ein Gesenk hinab zur alten Weitung im Eisernen Hut, voller Funde – aber dort stehen <b>matte Wetter</b>: Die Luft reicht nur kurz. Frische Wetter gibt es erst, wenn du von der Weitung aus einen eigenen Wetterschacht nach über Tage haust. Eine Froschlampe zeigt schlechte Luft mit kleiner blauer Flamme an. Unten steht ockerbraunes Grubenwasser – tauchen (die Luft reicht kurz) oder Kübel für Kübel abschöpfen. Bricht ein Türstock, sinkt über Tage eine Pinge ein. Wirst du ohnmächtig oder verschüttet, fallen dir die Funde seit dem letzten Ausfahren aus der Tasche und stecken unten wieder im Gestein – erst über Tage sind sie sicher.</li>
-        <li><b>Schwarzbefahrer:</b> Nachts schlüpft manchmal einer in den Stollen oder auf die 1. Sohle – du erkennst ihn an seiner Stirnlampe. Sammler kann er nicht leiden. Sieht er dich (dein Geleucht verrät dich von Weitem), jagt er dich. Erwischt er dich, steckt er deine Funde aus dem Altbergbau zurück ins Gestein und nimmt deine eingehängten Seile mit. Rauswerfen tut er dich nicht – aber hinauskommen musst du dann selbst. Auf der Halde liegen Haldenfunde.</li>
+        <li>Der <b>Steinbruchbesitzer</b> ist ein Basalt-Tama, eine Säule aus seinem eigenen Bruch. Gesteins-Tamas erkennst du daran, dass sie matt und körnig sind und keine Kristallflächen haben. Er macht seine Runden und darf dich nicht entdecken (rot: sein Blickfeld). Versteck dich hinter Fels. Nachts schläft er meist in der Bude – aber ein brennendes Geleucht sieht er von Weitem. Erwischt er dich, kassiert er die Funde und den Basalt aus dem Bruch ein, zieht deine Seile heraus und behält sie samt denen im Vorrat, und das Dynamit nimmt er auch. Draußen vor dem Gelände ist deine Beute sicher. Und ein Knall lockt ihn sofort an.</li>
+        <li><b>Altbergbau</b> (links vom Erzgang, hinter der Halde): Gleich hinter dem Mundloch ist der Stollen verbrochen, darüber liegt eine Pinge voller Schutt. Über die alte Fahrt am Mundloch kommst du auf den Hang. Unter der Stollensohle gibt es die 1. Sohle (eine Strecke bis zum alten Ort mit stehengelassenem Erz) und tiefer die 2. Sohle mit der Weitung. Loser Verbruch rutscht nach – wer darunter steht, bekommt Steinschlag ab. Im Stollen halten morsche Türstöcke die Firste: Haust oder sprengst du einen weg, bricht sie herein. Hinten führt ein Gesenk hinab zur alten Weitung im Eisernen Hut, voller Funde – aber dort stehen <b>matte Wetter</b>: Die Luft reicht nur kurz. Frische Wetter gibt es erst, wenn du von der Weitung aus einen eigenen Wetterschacht nach über Tage haust. Eine Froschlampe zeigt schlechte Luft mit kleiner blauer Flamme an. Unten steht ockerbraunes Grubenwasser – tauchen (die Luft reicht kurz) oder Kübel für Kübel abschöpfen. Es sickert aber ständig nach, solange die Sohle darunter dicht ist. Haust du ein Loch in die Sohle, läuft es in die Tiefe ab. Bricht ein Türstock, sinkt über Tage eine Pinge ein. Wirst du ohnmächtig oder verschüttet, fallen dir die Funde seit dem letzten Ausfahren aus der Tasche und stecken unten wieder im Gestein – erst über Tage sind sie sicher.</li>
+        <li><b>Schwarzbefahrer:</b> Gneis-Tamas, gebändert grau-weiß wie das Gestein des Erzgebirges, mit Kapuze und Rucksack. Nachts schlüpft manchmal einer in den Stollen oder auf die 1. Sohle – du erkennst ihn an seiner Stirnlampe. Sammler kann er nicht leiden. Sieht er dich (dein Geleucht verrät dich von Weitem), jagt er dich. Erwischt er dich, steckt er deine Funde aus dem Altbergbau zurück ins Gestein und nimmt deine eingehängten Seile mit. Rauswerfen tut er dich nicht – aber hinauskommen musst du dann selbst. Will er über das Gesenk auf die andere Sohle, nimmt er eine Fahrt oder ein Seil, das dort schon hängt. Sonst hängt er von oben sein eigenes Seil ein oder stellt von unten seine Fahrt auf, und beim Verschwinden nimmt er sein Gerät wieder mit. Klaust du es ihm (abhauen), sitzt er auf seiner Sohle fest. Auf der Halde liegen Haldenfunde.</li>
+        <li><b>Haldensammler:</b> Tagsüber kommt ab und zu ein anderer Sammler über den Feldweg rechts vom Teich, ein Granit-Tama mit Fischerhut und Geologenhammer. Er klaubt auf den Halden und gräbt sie dabei oberflächlich um. Haldenfunde, die offen obenauf liegen, steckt er ein. Was noch im Schutt steckt, findet nur, wer selbst gräbt. Fundstücke und Mineraltchi, die über Tage ungeschützt herumliegen, steckt er ein. Was auf einem Ständer präsentiert ist, rührt er nicht an, ebenso wenig, wenn du daneben stehst. Erwischst du ihn mit Beute (hinlaufen), lässt er alles fallen. Sonst ist es weg, sobald er die Welt verlässt. In den Steinbruch traut er sich nicht.</li>
         <li><b>Hunt und Gleise:</b> Gleise auf festen Boden legen (eben oder eine Kachel hoch/runter), den Hunt draufstellen. <kbd>E</kbd> oder Klick auf den Hunt: einsteigen, <kbd>A</kbd> <kbd>D</kbd> geben Schwung, <kbd>W</kbd> steigt aus. Rechtsklick lädt den Hunt wieder auf. Im Stollen des Altbergbaus steht noch ein alter Hunt.</li>
+        <li><b>Akku:</b> Das Helmgeleucht hängt an einem Akku am Gürtel. Voll reicht er etwa fünf Minuten Brenndauer. Unter 20 % wird das Licht schwächer und flackert, bei 0 % ist es aus. Ist er leer, steckt Druschi von selbst einen <b>Ersatzakku</b> ein. Einen hast du dabei, weitere bastelst du (ein Bleiakku aus 2 Erzgang und 1 Brett). Außerdem lädt das <b>Solarpanel</b> am Rucksack über Tage bei Tageslicht von selbst, aber langsam: in etwa drei Minuten ist der Akku voll. Nachts und unter Tage, wo du das Licht brauchst, lädt es nicht. Froschlampen in der Strecke brauchen keinen Akku.</li>
+        <li><b>Reinigen:</b> Frisch geborgene Mineraltchi stecken noch in einer Kruste aus ihrem Gestein: Rostkruste (Limonit) aus Erzgang und Eisernem Hut, Kalkkruste aus Drusen im Kalk, sonst Lehm. Solange die Kruste dran ist, glänzen sie nur halb, und Abstauben hilft nicht. Wähle das richtige Mittel: Lehm weicht in Wasser auf, Kalk löst verdünnte Salzsäure, Rost lösen Oxalsäure oder Salzsäure. Aber Vorsicht, wie bei echten Stufen: Karbonate wie Calcit schäumen in Säure und werden angefressen, Zeolithe zersetzt die Salzsäure, Blei- und Phosphatminerale ätzt jede Säure an, und Steinsalz löst sich schon in Wasser. Eine angeätzte Stufe glänzt nie wieder ganz.</li>
+        <li><b>Einschmelzen:</b> Unter „Basteln“ kannst du Erzgang-Stufen einschmelzen, statt daraus ein Mineraltchi schlüpfen zu lassen. Gediegen Silber gibt 3 Silbertaler, Proustit (Rotgültigerz) 2, silberhaltiger Bleiglanz 1, Gold umgerechnet 4. Aus Pechblende werden 2× Yellowcake (Urankonzentrat). Daraus bastelst du mit Erzgang einen Atomakku, der dein Geleucht auch unter Tage und nachts nachlädt, insgesamt dreimal voll, dann ist er erschöpft. Yellowcake und Atomakku strahlen allerdings am Gürtel und erhöhen deine Dosis. Alles andere wird Schlacke. Was drinsteckt, siehst du erst beim Schmelzen, nur Pechblende verrät vorher der Geigerzähler.</li>
+        <li><b>Silbertaler und Sammelschein:</b> Stell dich tagsüber vor die Bude des Steinbruchbesitzers und drück <kbd>E</kbd>: Für 3 Taler bekommst du einen Sammelschein bis Feierabend. Dann darfst du im Bruch sammeln, und Funde und Basalt gehören dir. Schießen, Hauen an der Bude oder Schutt abkippen kosten dich den Schein, und nachts gilt er nicht.</li>
+        <li><b>Abraum abkippen</b> (<kbd>K</kbd>): Über Tage kippt Druschi das gesammelte Gestein vor sich ab (Erde, Sandstein, Kalk, Schiefer, Basalt, Granit, Tiefengestein, Eiserner Hut). Erz, Salz und zwei Sandsteine für einen Ständer bleiben im Vorrat. Mehr als 40 Brocken Gestein kann Druschi nicht tragen. Unter Tage lädst du den Abraum deshalb in einen <b>Hunt</b>: Stell ihn neben dich und drück K. Bei voller Tasche wandert frisch Gehauenes von selbst in einen Hunt in der Nähe, der fasst 60 Brocken. Dann fährst du ihn über die Gleise nach über Tage und kippst ihn dort mit K aus. Je zwei Brocken ergeben eine Kachel Haldenschutt. Der Schutt rieselt und rollt ab, bis ein Schuttkegel steht, und füllt dabei auch Löcher und Tümpel. Beim Graben auf einer Halde findest du ab und zu ein übersehenes Stück (Klauben). Kippst du am Steinbruch ab, hört das der Besitzer und ist bis zum nächsten Morgen besonders wachsam.</li>
+        <li><b>Uran suchen:</b> Tief unten im Erzgang stecken ein paar Nester Pechblende (Uraninit), oben im Eisernen Hut die bunten Uranglimmer, dazu Fluorit im Gang. Der <b>Geigerzähler</b> schaltet sich ab 1 µSv/h von selbst ein und bei Ruhe wieder aus. Er tickt umso schneller, je näher du kommst – Gestein dazwischen schirmt ab. Mit <kbd>Z</kbd> kannst du ihn zum Schweigen bringen. Die <b>UV-Lampe</b> (<kbd>U</kbd>) bringt Autunit und Uranocircit gelbgrün und Fluorit blau zum Leuchten, sobald eine Strecke oder Kluft in der Nähe ist. Torbernit und Cuprosklodowskit bleiben dunkel, weil das Kupfer die Fluoreszenz löscht. Druschi sammelt dabei Dosis, auch mit ausgeschaltetem Zähler und auch durch Uran in der Tasche. Bei 50 µSv kommt eine Warnung. Ab 75 µSv ist Druschi <b>schlapp</b>: Er läuft und haut langsamer, bis er eine Nacht über Tage ausgeschlafen hat. Bei 100 µSv greift der <b>Strahlenschutz</b> ein: Uranfunde, Yellowcake und Atomakkus werden eingezogen, und die Dosis steht wieder auf null. Mineraltchi, die lange neben Uran stehen, <b>verfärben sich</b>: Bergkristall wird zu Rauchquarz und dann zu Morion, Fluorit zu schwarzviolettem Antozonit, Steinsalz wird blau.</li>
         <li><b>Bergschaden:</b> Höhlst du unter der Bude zu viel aus, sackt sie ab und bekommt einen Riss. Dann ist der Besitzer bis zum nächsten Morgen besonders wachsam: Er sieht weiter, macht mehr Runden und schläft auch nachts kaum. Morgens verfüllt er die Hohlräume mit Basaltschotter.</li>
         <li class="klein">Im echten Leben gilt: Steinbrüche nur mit Erlaubnis betreten. Viele Betreiber lassen Sammler nach Absprache oder an Sammlertagen hinein – wegen Steinschlag und Sprengungen ist es dort gefährlich.</li>
         <li>Fundstücke (glitzernde Knollen im Gestein) ausgraben und ablegen – nach einer Weile knackt die Druse und ein Mineraltchi schlüpft. Was schlüpft, hängt vom Gestein ab.</li>
@@ -175,8 +212,17 @@ kbd { font: .76rem var(--f-mono); border: 1px solid var(--line); border-radius: 
           <div class="knoepfe">
             <button class="knopf voll" id="knopfFuettern" type="button">Lösung geben</button>
             <button class="knopf" id="knopfAbstauben" type="button">Abstauben</button>
+            <button class="knopf" id="knopfReinigen" type="button" hidden>Reinigen</button>
             <button class="knopf" id="knopfSpielen" type="button">Spielen</button>
             <button class="knopf" id="knopfTasche" type="button">In die Tasche</button>
+            <button class="knopf voll" id="knopfSammlung" type="button" hidden>In die Sammlung</button>
+          </div>
+          <p class="klein" id="sammlungHinweis"></p>
+          <div class="knoepfe" id="reinigenWahl" hidden>
+            <span class="klein">Womit reinigen?</span>
+            <button class="knopf" type="button" data-mittel="wasser">Wasser und Bürste</button>
+            <button class="knopf" type="button" data-mittel="oxalsaeure">Oxalsäure</button>
+            <button class="knopf" type="button" data-mittel="saeure">Verdünnte Salzsäure</button>
           </div>
           <p class="klein" id="pflegeText"></p>
           <details><summary>Steckbrief</summary><dl id="steckbrief"></dl></details>
@@ -187,6 +233,9 @@ kbd { font: .76rem var(--f-mono); border: 1px solid var(--line); border-radius: 
     <section class="feld">
       <h2>Basteln</h2>
       <div id="rezepte"></div>
+      <h3>Einschmelzen</h3>
+      <p class="klein">Erzgang-Stufen kannst du einschmelzen, statt sie abzulegen. Dann schlüpft daraus aber kein Mineraltchi. Was drinsteckt, siehst du erst beim Schmelzen: Silbererze geben Silbertaler, Pechblende gibt Yellowcake für Atomakkus, alles andere wird Schlacke. Nur Pechblende verrät dir der Geigerzähler vorher.</p>
+      <div id="huette"></div>
     </section>
 
     <section class="feld">
@@ -1539,7 +1588,8 @@ const WESEN = [
       { name: 'Lila', farben: { hell: '#f0e4ff', a: '#c8a4f0', b: '#9a6ad6', c: '#6a3eaa', o: '#2a1450' }, notiz: 'Lila: die klassische Fluoritfarbe.' },
       { name: 'Grün', farben: { hell: '#e8fbe8', a: '#a8e8b0', b: '#5ec472', c: '#2e8a46', o: '#123a1e' }, notiz: 'Grün: ebenfalls sehr häufig.' },
       { name: 'Zoniert', farben: { hell: '#f0e4ff', a: '#c8a4f0', b: '#9a6ad6', c: '#6a3eaa', o: '#2a1450', kern: '#9ee8a8' }, notiz: 'Zoniert: außen lila, innen grün – jede Zone ist eine Wachstumsphase.' },
-      { name: 'Gelb', farben: { hell: '#fff8d8', a: '#fbe48a', b: '#eec440', c: '#b8901a', o: '#4e3a08' }, notiz: 'Gelb: warm und honigfarben.' }
+      { name: 'Gelb', farben: { hell: '#fff8d8', a: '#fbe48a', b: '#eec440', c: '#b8901a', o: '#4e3a08' }, notiz: 'Gelb: warm und honigfarben.' },
+      { name: 'Antozonit', farben: { hell: '#8a6aa8', a: '#4e2e70', b: '#33204e', c: '#1e1230', o: '#000000', dunkel: true, wange: 'rgba(255, 140, 160, 0.35)' }, notiz: 'Antozonit („Stinkspat“): Die Strahlung von Uranerz hat ihn fast schwarzviolett gefärbt. Zerschlagen riecht er stechend nach Fluor – berühmt aus Wölsendorf in der Oberpfalz.' }
     ],
     male: (ctx, f, o) => {
       fuesse(ctx, 34, 58, 90, f);
@@ -2279,6 +2329,44 @@ const WESEN = [
     fehler: 'Zu warm gelagert, und er wird trüb und matt.'
   },
   {
+    id: 'laumontit', name: 'Laumontitchi', mineral: 'Laumontit', formel: 'CaAl₂Si₄O₁₂ · 4H₂O', system: 'monoklin', mohs: '3–4',
+    schale: ['#fbe2d8', '#d0765a'],
+    varianten: [
+      { name: 'Ziegelrot', farben: { hell: '#ffe2d6', a: '#f2a58a', b: '#d0765a', c: '#a04e36', o: '#4a1e12' }, notiz: 'Ziegelrot: so steckt er im Syenit des Plauenschen Grundes als Kluftfüllung.' },
+      { name: 'Weiß', farben: { hell: '#ffffff', a: '#f6f2ec', b: '#e2dacc', c: '#bcb0a0', o: '#544a3e' }, notiz: 'Weiß: frisch und glasglänzend, mit vollem Kristallwasser.' },
+      { name: 'Leonhardit', farben: { hell: '#fbf8f2', a: '#ece6dc', b: '#d6cebf', c: '#b0a694', o: '#6a6052', kreide: true }, notiz: 'Leonhardit: an trockener Luft ausgetrocknet – kreidig weiß und bröselig.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      // Schlanke Prismen mit schraeg abgeschnittenem Kopf, zum Buendel gewachsen
+      [[-17, 6, -0.16], [17, 4, 0.16], [0, 0, 0]].forEach(([dx, dy, neigung]) => {
+        ctx.save();
+        ctx.translate(50 + dx, 88);
+        ctx.rotate(neigung);
+        const breite = dx ? 12 : 16, hoehe = dx ? 56 : 66;
+        flaeche(ctx, [[-breite / 2, -dy], [0, -dy], [0, -hoehe + 6], [-breite / 2, -hoehe + 12]], f.a);
+        flaeche(ctx, [[0, -dy], [breite / 2, -dy], [breite / 2, -hoehe], [0, -hoehe + 6]], f.b);
+        flaeche(ctx, [[-breite / 2, -hoehe + 12], [0, -hoehe + 6], [breite / 2, -hoehe], [0, -hoehe + 2]], f.hell);
+        umriss(ctx, [[-breite / 2, -dy], [breite / 2, -dy], [breite / 2, -hoehe], [0, -hoehe + 2], [-breite / 2, -hoehe + 12]], f.o, 2);
+        ctx.restore();
+      });
+
+      // Ausgetrocknet: kreidige Flecken und Risse
+      if (f.kreide) {
+        [[38, 50], [58, 40], [47, 72], [64, 66]].forEach(([x, y]) => { oval(ctx, x, y, 4, 3); ctx.fillStyle = 'rgba(255, 255, 255, 0.75)'; ctx.fill(); });
+        linie(ctx, [[44, 36], [48, 44], [45, 50]], f.c, 1);
+        linie(ctx, [[60, 52], [56, 60]], f.c, 1);
+      }
+
+      gesicht(ctx, 50, 62, 0.85, f, o);
+    },
+    spezial: { label: 'Austrocknen', typ: 'zuVariante', ziel: 2, text: 'Zu trocken! An trockener Luft verliert Laumontit Kristallwasser und zerfällt zu kreidigem Leonhardit – Sammler bewahren ihn deshalb feucht oder versiegelt auf.' },
+    wesen: 'Ein Bündel schlanker Prismen mit schrägem Kopf. Ein Zeolith, der Klüfte in Syenit und Basalt füllt – im Plauenschen Grund bei Dresden oft ziegelrot und gern auf Calcit.',
+    pflege: 'Regelmäßig trinken lassen und nicht an die Heizung stellen. Zeolithe lieben es feucht.',
+    fehler: 'Trocknet er aus, wird er zu bröseligem Leonhardit. Das passiert echten Stufen schon in der Vitrine.'
+  },
+  {
     id: 'apophyllit', name: 'Apophyllitchi', mineral: 'Apophyllit', formel: 'KCa₄Si₈O₂₀(F,OH) · 8H₂O', system: 'tetragonal', mohs: '4,5–5',
     schale: ['#eefaf2', '#9adcb0'],
     varianten: [
@@ -2497,6 +2585,7 @@ const FUNDORTE = {
   aragonit: { typ: 'Molina de Aragón (Spanien)', ber: 'Erzberg (Steiermark) für Eisenblüte' },
   prehnit: { typ: 'Kap der Guten Hoffnung (Südafrika)', ber: 'Kayes (Mali), Paterson (New Jersey, USA)' },
   stilbit: { ber: 'Pune (Indien), Berufjörður (Island), Färöer' },
+  laumontit: { typ: 'Huelgoat (Bretagne, Frankreich)', ber: 'Plauenscher Grund bei Dresden (ziegelrot), Pune (Indien)' },
   apophyllit: { ber: 'Pune und Jalgaon (Indien), Sankt Andreasberg (Harz)' },
   smithsonit: { ber: 'Kelly Mine (New Mexico, USA), Tsumeb (Namibia)' },
   hemimorphit: { ber: 'Ojuela Mine bei Mapimí (Mexiko), Wenshan in Yunnan (China) für blauen Hemimorphit' },
@@ -2609,7 +2698,7 @@ const HUELLEN = [
     textRiss: 'Es knackt! Im Riss schimmern Achatbänder.',
     pfad: mandelPfad, rinde: ['#ccd2ba', '#8e9a78', '#5e6a4e'], umriss: '#343c2a',
     schnitt: '#9fb0d8', innen: '#5f76b4', glitzer: '#eef1f8',
-    kinder: ['amethyst', 'quarz', 'opal', 'okenit', 'cavansit', 'stilbit', 'apophyllit', 'prehnit', 'calcit']
+    kinder: ['amethyst', 'quarz', 'opal', 'okenit', 'cavansit', 'stilbit', 'apophyllit', 'prehnit', 'calcit', 'laumontit']
   },
   {
     typ: 'druse', name: 'Erzgang-Stufe',
@@ -2792,6 +2881,7 @@ const PARAGENESEN = [
   { ids: ['cavansit', 'stilbit'], bed: 'heisswasser', lage: 'auf', wirt: 'stilbit', text: 'Blaue Cavansit-Kugeln auf weißem Stilbit – die berühmte Stufe aus Pune.' },
   { ids: ['okenit', 'apophyllit'], bed: 'heisswasser', text: 'Wattebäusche neben klaren Kristallen in indischen Basaltdrusen.' },
   { ids: ['apophyllit', 'stilbit'], bed: 'heisswasser', lage: 'auf', wirt: 'stilbit', text: 'Apophyllit auf pfirsichfarbenem Stilbit, ebenfalls aus Indien.' },
+  { ids: ['laumontit', 'calcit'], bed: 'heisswasser', lage: 'auf', wirt: 'calcit', text: 'Ziegelroter Laumontit auf Calcit – so sitzt er in den Klüften der Syenitbrüche im Plauenschen Grund.' },
   { ids: ['turmalin', 'quarz'], bed: 'schmelze', lage: 'in', wirt: 'quarz', text: 'In Pegmatiten stecken Turmalinsäulen mitten im Quarz.' },
   { ids: ['beryll', 'orthoklas'], bed: 'schmelze', lage: 'auf', wirt: 'orthoklas', text: 'Beryll wächst in Pegmatiten zwischen großen Feldspatkristallen.' },
   { ids: ['topas', 'quarz'], bed: 'schmelze', text: 'Topas und Rauchquarz – wie am Schneckenstein im Vogtland.' },
@@ -2832,7 +2922,7 @@ const FUNDPHASEN = [7, 5, 7, 7];
 const SPIELER_B = 0.8;
 const SPIELER_H = 1.45;
 
-const K = { luft: 0, gras: 1, erde: 2, sandstein: 3, kalk: 4, schiefer: 5, basalt: 6, granit: 7, tiefgestein: 8, erzgang: 9, eisenhut: 10, salz: 11, wasser: 12, thermal: 13, lava: 14, grundfels: 15, fund: 16, stamm: 17, laub: 18, leiter: 19, laterne: 20, staender: 21, bretter: 22, dynamit: 23, seil: 24, verbruch: 25, halde: 26, zimmerung: 27, gleis: 28, hunt: 29 };
+const K = { luft: 0, gras: 1, erde: 2, sandstein: 3, kalk: 4, schiefer: 5, basalt: 6, granit: 7, tiefgestein: 8, erzgang: 9, eisenhut: 10, salz: 11, wasser: 12, thermal: 13, lava: 14, grundfels: 15, fund: 16, stamm: 17, laub: 18, leiter: 19, laterne: 20, staender: 21, bretter: 22, dynamit: 23, seil: 24, verbruch: 25, halde: 26, zimmerung: 27, gleis: 28, hunt: 29, lampenstube: 30, taler: 31, uranglas: 32, akku: 33, uran: 34, atomakku: 35 };
 
 // Altbergbau: Halde, Mundloch im Hang, Stollen mit alten Tuerstoecken, Gesenk hinab zur Weitung im Eisernen Hut
 const ALT = {
@@ -2900,9 +2990,15 @@ legeArtFest(K.hunt, { name: 'Hunt', fest: false, muster: 'hunt', farben: ['#c49a
 legeArtFest(K.seil, { name: 'Seil', fest: false, haerte: 150, gibt: K.seil, muster: 'seil', farben: ['#f4e2b0', '#cfae6c', '#7a5a2c'] });
 legeArtFest(K.staender, { name: 'Ständer', haerte: 250, gibt: K.staender, muster: 'staender', farben: ['#eef8ff', '#c4e4fa', '#7aaed4'] });
 legeArtFest(K.bretter, { name: 'Bretter', haerte: 450, gibt: K.bretter, muster: 'bretter', farben: ['#ecc084', '#cc9a5c', '#8a5e30'] });
+legeArtFest(K.taler, { name: 'Silbertaler', fest: false });
+legeArtFest(K.akku, { name: 'Ersatzakku', fest: false });
+legeArtFest(K.uran, { name: 'Yellowcake', fest: false });
+legeArtFest(K.atomakku, { name: 'Atomakku', fest: false });
+legeArtFest(K.uranglas, { name: 'Uranglas-Ständer', haerte: 250, gibt: K.uranglas, muster: 'uranglas', farben: ['#f4ffc0', '#d8f070', '#8aa82a'] });
+legeArtFest(K.lampenstube, { name: 'Lampenstube', fest: false, haerte: 400, gibt: K.lampenstube, muster: 'lampenstube', farben: ['#ecc084', '#b07a46', '#5a3a1e'] });
 
 // Reihenfolge in der Leiste
-const BAUBARE = [K.leiter, K.seil, K.gleis, K.hunt, K.laterne, K.dynamit, K.staender, K.bretter, K.stamm, K.laub, K.erde, K.sandstein, K.kalk, K.salz, K.eisenhut, K.erzgang, K.schiefer, K.basalt, K.granit, K.tiefgestein];
+const BAUBARE = [K.leiter, K.seil, K.gleis, K.hunt, K.laterne, K.dynamit, K.staender, K.uranglas, K.bretter, K.stamm, K.laub, K.erde, K.sandstein, K.kalk, K.salz, K.eisenhut, K.erzgang, K.schiefer, K.basalt, K.granit, K.tiefgestein];
 
 const REZEPTE = [
   { ergibt: K.bretter, menge: 4, braucht: [[K.stamm, 1]], text: 'Aus einem Baumstamm.' },
@@ -2911,9 +3007,10 @@ const REZEPTE = [
   { ergibt: K.gleis, menge: 6, braucht: [[K.bretter, 1], [K.erzgang, 1]], text: 'Holzschwellen mit Eisenschienen. Man kann sie eben oder eine Kachel hoch und runter verlegen.' },
   { ergibt: K.hunt, menge: 1, braucht: [[K.bretter, 3], [K.erzgang, 2]], text: 'Der Förderwagen der Bergleute. Auf Gleisen kannst du damit durch die Strecke fahren.' },
   { ergibt: K.laterne, menge: 2, braucht: [[K.bretter, 1], [K.erzgang, 1]], text: 'Eine Froschlampe aus Messing, am Haken aufgehängt – Licht für die Strecke.' },
+  { ergibt: K.atomakku, menge: 1, braucht: [[K.uran, 1], [K.erzgang, 2]], text: 'Uran aus der Pechblende im Erzgehäuse: Am Gürtel lädt er dein Geleucht immer wieder nach, auch unter Tage und nachts – insgesamt dreimal voll, dann ist er erschöpft. Er strahlt aber, deine Dosis steigt.' },
+  { ergibt: K.akku, menge: 1, braucht: [[K.erzgang, 2], [K.bretter, 1]], text: 'Ein Bleiakku wie bei den alten Grubenlampen: Bleiplatten aus dem Erz in einem Kasten. Ist das Geleucht leer, tauscht Druschi von selbst.' },
   { ergibt: K.dynamit, menge: 2, braucht: [[K.salz, 1], [K.bretter, 1]], text: 'Zum Schießen (so sagt der Bergmann zum Sprengen). Im Spiel vereinfacht – echtes Dynamit (Alfred Nobel, 1867) ist Nitroglycerin, aufgesaugt in Kieselgur.' },
-  { ergibt: K.staender, menge: 1, braucht: [[K.sandstein, 2], [K.bretter, 1]], text: 'Wie ein Acrylständer zu Hause: Darauf staubt ein Mineraltchi langsamer ein und ist besser gelaunt.' }
-];
+  { ergibt: K.staender, menge: 1, braucht: [[K.sandstein, 2], [K.bretter, 1]], text: 'Wie ein Acrylständer zu Hause: Darauf staubt ein Mineraltchi langsamer ein und ist besser gelaunt.' }];
 
 // ===== Hilfsfunktionen =====
 
@@ -2984,6 +3081,7 @@ function maskiere(text) {
 const welt = new Uint8Array(BREITE * HOEHE);
 const hinter = new Uint8Array(BREITE * HOEHE);
 const fundHuelle = new Int8Array(BREITE * HOEHE);
+let fundZiel = new Map();
 const oberflaeche = new Int16Array(BREITE);
 let saat = 0;
 
@@ -3100,6 +3198,7 @@ function baueAltbergbau(r) {
     welt[idx(x, y)] = t;
     hinter[idx(x, y)] = hg;
     fundHuelle[idx(x, y)] = -1;
+    fundZiel.delete(idx(x, y));
   };
 
   // Flacher Haldenplatz, dann der Hang
@@ -3227,6 +3326,7 @@ function erzeugeWelt(neueSaat) {
   welt.fill(K.luft);
   hinter.fill(K.luft);
   fundHuelle.fill(-1);
+  fundZiel = new Map();
 
   // Huegelige Oberflaeche
   for (let x = 0; x < BREITE; x++) oberflaeche[x] = Math.round(OBERFLAECHE + 2.2 * Math.sin(x / 9 + p1) + 1.2 * Math.sin(x / 4.3 + p2));
@@ -3367,6 +3467,8 @@ function erzeugeWelt(neueSaat) {
       }
     }
   }
+
+  baueUranNester(zufallsGenerator(saat + 13));
 
   // Baeume auf der Wiese
   let x = 3;
@@ -3748,6 +3850,64 @@ function maleMuster(g, a, r) {
       for (const y of [33, 66]) { g.beginPath(); g.moveTo(0, y); g.lineTo(100, y); g.stroke(); }
       for (const [x, y] of [[10, 16], [90, 16], [10, 50], [90, 50], [10, 83], [90, 83]]) punkt(x, y, 2.4, 2.4, dunkel);
       break;
+
+    case 'uranglas':
+
+      // Gelbgruenes Uranglas: durchscheinend, mit dickem Glasrand
+      g.fillStyle = 'rgba(214, 240, 110, 0.6)';
+      g.fillRect(6, 0, 88, 100);
+      g.strokeStyle = 'rgba(138, 168, 42, 0.95)';
+      g.lineWidth = 3;
+      g.strokeRect(6, 1.5, 88, 97);
+      g.strokeStyle = 'rgba(255, 255, 230, 0.9)';
+      g.lineWidth = 4;
+      g.beginPath();
+      g.moveTo(18, 14);
+      g.lineTo(18, 60);
+      g.stroke();
+      g.fillStyle = 'rgba(138, 168, 42, 0.55)';
+      g.fillRect(6, 0, 88, 8);
+      break;
+
+    case 'lampenstube':
+
+      // Bretterwand mit Fugen
+      g.fillStyle = hell;
+      g.fillRect(10, 40, 80, 60);
+      g.strokeStyle = mittel;
+      g.lineWidth = 2;
+      for (const x of [26, 42, 58, 74]) { g.beginPath(); g.moveTo(x, 40); g.lineTo(x, 100); g.stroke(); }
+
+      // Ziegeldach
+      g.beginPath();
+      g.moveTo(2, 44);
+      g.lineTo(50, 8);
+      g.lineTo(98, 44);
+      g.closePath();
+      g.fillStyle = '#a8442e';
+      g.fill();
+      g.strokeStyle = '#5a2014';
+      g.lineWidth = 3;
+      g.stroke();
+
+      // Erleuchtetes Fenster mit Lampen auf dem Ladebrett, daneben die Tuer
+      g.fillStyle = '#ffe9a0';
+      g.fillRect(18, 52, 30, 22);
+      g.fillStyle = '#4a3a2a';
+      g.fillRect(18, 66, 30, 3);
+      for (const x of [23, 33, 43]) {
+        g.fillStyle = '#3a3a42';
+        g.fillRect(x - 2.5, 58, 5, 8);
+        g.fillStyle = '#7aff6a';
+        g.fillRect(x - 1, 55, 2, 3);
+      }
+      g.strokeStyle = dunkel;
+      g.lineWidth = 3;
+      g.strokeRect(18, 52, 30, 22);
+      g.fillStyle = dunkel;
+      g.fillRect(58, 56, 22, 44);
+      punkt(75, 78, 2, 2, '#e8c84a');
+      break;
   }
 }
 
@@ -3909,6 +4069,11 @@ let luft = 100;
 let wetterFrisch = false;
 let matteGemeldet = false;
 let geleuchtAus = false;
+let akku = 100;
+const ATOM_LADUNG = 300;
+let atomRest = 0;
+let akkuStufe = 0;
+let laedtGemeldet = false;
 let nachtWert = 0;
 let fahrtMeldungBis = 0;
 const gemeldet = new Set();
@@ -3934,6 +4099,7 @@ function startAusruestung() {
   inventar[K.seil] = 2;
   inventar[K.bretter] = 4;
   inventar[K.staender] = 1;
+  inventar[K.akku] = 1;
   loesung = 3;
   fundstuecke = [];
   tasche = [];
@@ -3944,6 +4110,11 @@ function startAusruestung() {
   ausgewaehlt = null;
   hunte = [];
   fahrt = null;
+  akku = 100;
+  akkuStufe = 0;
+  dosis = 0;
+  dosisStufe = 0;
+  schlapp = false;
   stelleAltenHuntAuf();
   repariereFundament();
   setzeSpielerAnStart();
@@ -3961,15 +4132,18 @@ function setzeSpielerAnStart() {
 /// Spielstand im Browser sichern
 function speichere() {
   try {
+    // Das Geraet des Schwarzbefahrers nimmt er beim Schliessen mit
+    const fremd = new Set(befahrer.geraet ? befahrer.geraet.kacheln.filter(i => welt[i] === befahrer.geraet.art) : []);
     let kodiert = '';
-    for (let i = 0; i < welt.length; i++) kodiert += String.fromCharCode(65 + welt[i]);
+    for (let i = 0; i < welt.length; i++) kodiert += String.fromCharCode(65 + (fremd.has(i) ? K.luft : welt[i]));
 
     const funde = [];
     for (let i = 0; i < fundHuelle.length; i++) if (fundHuelle[i] >= 0) funde.push([i, fundHuelle[i]]);
 
     const daten = {
       version: 1, saat, welt: kodiert, funde, inventar, loesung, fundstuecke, tasche, entitaeten,
-      spieler: { x: spieler.x, y: spieler.y }, geschluepft: [...geschluepft], naechsteId, mitDynamit: true, mitSteinbruch: BRUCH_VERSION, bergschaden: bergschaden.aktiv, schildBemerkt, bruchBasalt, mitAltbergbau: ALT_VERSION, hunte, mitHunt: true
+      spieler: { x: spieler.x, y: spieler.y }, geschluepft: [...geschluepft], naechsteId, mitDynamit: true, mitSteinbruch: BRUCH_VERSION, bergschaden: bergschaden.aktiv, schildBemerkt, bruchBasalt, mitAltbergbau: ALT_VERSION, hunte, mitHunt: true,
+      fundZiele: [...fundZiel], mitUran: true, dosis, dosisStufe, haldeBemerkt, akku, sammelschein, atomRest, schlapp, mitDosisGrenze: true
     };
     localStorage.setItem(SPIELSPEICHER, JSON.stringify(daten));
   } catch (e) { /* Speicher nicht verfuegbar */ }
@@ -4010,6 +4184,19 @@ function lade() {
     neuerAltbergbau = true;
   }
 
+  // Vorbestimmte Fundinhalte (Uran- und Fluoritnester); aeltere Welten bekommen die Nester nachtraeglich
+  fundZiel = new Map(daten.fundZiele || []);
+  if (!daten.mitUran) baueUranNester(zufallsGenerator(daten.saat + 13));
+  dosis = daten.dosis || 0;
+  dosisStufe = daten.dosisStufe || 0;
+  schlapp = !!daten.schlapp;
+
+  // Bis jetzt zaehlte die Dosis anders (mSv-Massstab): einmal auf null
+  if (!daten.mitDosisGrenze) {
+    dosis = 0;
+    dosisStufe = 0;
+  }
+
   // Gelegtes Dynamit war beim Schliessen nicht gezuendet: zurueck in den Vorrat
   for (let i = 0; i < welt.length; i++) {
     if (welt[i] === K.dynamit) {
@@ -4025,6 +4212,18 @@ function lade() {
   repariereFundament();
   bergschaden.aktiv = !!daten.bergschaden;
   schildBemerkt = !!daten.schildBemerkt;
+  haldeBemerkt = !!daten.haldeBemerkt;
+  sammelschein = !!daten.sammelschein;
+  atomRest = daten.atomRest || 0;
+  akku = typeof daten.akku === 'number' ? daten.akku : 100;
+
+  // Aeltere Spielstaende bekommen einmalig einen Ersatzakku; eine noch nicht aufgestellte Lampenstube wird auch einer
+  if (typeof daten.akku !== 'number') inventar[K.akku] = (inventar[K.akku] || 0) + 1;
+  if (inventar[K.lampenstube] > 0) {
+    inventar[K.akku] = (inventar[K.akku] || 0) + inventar[K.lampenstube];
+    inventar[K.lampenstube] = 0;
+  }
+  akkuStufe = akku <= 0 ? 2 : akku <= 20 ? 1 : 0;
   hunte = daten.hunte || [];
   fahrt = null;
   if (!daten.mitHunt || neuerAltbergbau) stelleAltenHuntAuf();
@@ -4146,6 +4345,7 @@ function steigeAus() {
 /// Hunt aufnehmen (zurueck in den Vorrat)
 function nimmHunt(h) {
   if (fahrt === h.id) return;
+  if (h.ladung > 0) { meldung('Der Hunt ist beladen – erst über Tage auskippen (K), dann kannst du ihn aufladen.'); return; }
   hunte = hunte.filter(x => x !== h);
   inventar[K.hunt] = (inventar[K.hunt] || 0) + 1;
   meldung(h.alt ? 'Den alten Hunt hast du aufgeladen – er gehört jetzt dir.' : 'Hunt aufgeladen.');
@@ -4206,6 +4406,801 @@ function stelleAltenHuntAuf() {
   hunte.push({ id: naechsteId++, x: 49.5, ty: ALT.stollenOben + 1, vx: 0, alt: true });
 }
 
+// ===== Baumfaellen: unten durchgehauen, kippt der Baum vom Spieler weg =====
+
+let fallendeBaeume = [];
+
+/// Stamm und Krone ueber der Schnittstelle abnehmen und als kippenden Baum weiterfuehren
+function faelleBaum(tx, ty) {
+  let oben = ty - 1;
+  while (kachel(tx, oben - 1) === K.stamm) oben--;
+  const stamm = ty - oben;
+
+  // Stamm entfernen, dann die Krone rund um die Spitze
+  for (let y = oben; y < ty; y++) welt[idx(tx, y)] = K.luft;
+  let laub = 0;
+  for (let y = oben - 3; y <= oben + 2; y++) {
+    for (let x = tx - 3; x <= tx + 3; x++) {
+      if (y >= ty || kachel(x, y) !== K.laub) continue;
+      welt[idx(x, y)] = K.luft;
+      laub++;
+    }
+  }
+
+  const richtung = spieler.x <= tx + 0.5 ? 1 : -1;
+  fallendeBaeume.push({ tx, ty, stamm, laub, richtung, winkel: 0, drehung: 0.4 });
+  meldung('Baum fällt!');
+}
+
+/// Kippende Baeume drehen sich immer schneller um den Stumpf und landen dann
+function aktualisiereBaeume(dt) {
+  fallendeBaeume.forEach(b => {
+    b.drehung += dt * 6;
+    b.winkel = Math.min(Math.PI / 2, b.winkel + b.drehung * dt);
+    if (b.winkel >= Math.PI / 2) landeBaum(b);
+  });
+  fallendeBaeume = fallendeBaeume.filter(b => !b.gelandet);
+}
+
+/// Freie Kachel auf dem Boden einer Spalte ab Hoehe y suchen (oder null, wenn dort etwas im Weg ist)
+function bodenAb(x, y) {
+
+  // Am Hang liegt der Stamm ein, zwei Kacheln hoeher auf
+  for (let k = 0; k < 2 && kachel(x, y) !== K.luft; k++) y--;
+  if (kachel(x, y) !== K.luft || ueberlapptSpieler(x, y)) return null;
+  while (y < HOEHE - 3 && kachel(x, y + 1) === K.luft) y++;
+  return y;
+}
+
+/// Gelandet: Stamm liegt quer am Boden, die Krone am Ende; was nicht passt, wird Brennholz im Vorrat
+function landeBaum(b) {
+  b.gelandet = true;
+  let rest = 0, weg = 0;
+
+  for (let k = 1; k <= b.stamm; k++) {
+    const x = b.tx + b.richtung * k;
+    const y = weg ? null : bodenAb(x, b.ty);
+    if (y === null) { rest++; weg = 1; continue; }
+    welt[idx(x, y)] = K.stamm;
+  }
+
+  // Ein paar Laubkacheln am Ende, der Rest rieselt als Blaetter davon
+  let gelegt = 0;
+  for (let k = b.stamm + 1; k <= b.stamm + 2 && gelegt < b.laub && !weg; k++) {
+    const x = b.tx + b.richtung * k;
+    const y = bodenAb(x, b.ty);
+    if (y === null) break;
+    welt[idx(x, y)] = K.laub;
+    gelegt++;
+    if (gelegt < b.laub && kachel(x, y - 1) === K.luft && !ueberlapptSpieler(x, y - 1)) { welt[idx(x, y - 1)] = K.laub; gelegt++; }
+  }
+
+  if (rest) {
+    inventar[K.stamm] = (inventar[K.stamm] || 0) + rest;
+    aktualisiereLeiste();
+  }
+
+  // Aufschlag: Erschuetterung, Blaetter und Spaene
+  erschuetterungBis = performance.now() + 300;
+  for (let k = 0; k < 16; k++) {
+    const x = b.tx + 0.5 + b.richtung * (1 + Math.random() * (b.stamm + 1));
+    partikel.push({ x, y: b.ty + 0.5, vx: (Math.random() - 0.5) * 4, vy: -Math.random() * 5, leben: 0.8, farbe: k % 3 ? '#80cc70' : '#8e603a' });
+  }
+}
+
+/// Kippenden Baum zeichnen: Stamm mit runder Krone, um den Stumpf gedreht
+function maleFallendeBaeume(c) {
+  const stammFarben = KACHELARTEN[K.stamm].farben, laubFarben = KACHELARTEN[K.laub].farben;
+
+  fallendeBaeume.forEach(b => {
+    const laenge = b.stamm * KACHEL;
+    c.save();
+    c.translate((b.tx + 0.5) * KACHEL, (b.ty + 1) * KACHEL);
+    c.rotate(b.richtung * b.winkel);
+
+    c.fillStyle = stammFarben[1];
+    c.fillRect(-KACHEL * 0.22, -laenge, KACHEL * 0.44, laenge);
+    c.fillStyle = stammFarben[2];
+    c.fillRect(KACHEL * 0.1, -laenge, KACHEL * 0.12, laenge);
+
+    if (b.laub) {
+      oval(c, 0, -laenge - KACHEL * 0.4, KACHEL * 1.9, KACHEL * 1.5);
+      c.fillStyle = laubFarben[1];
+      c.fill();
+      oval(c, -KACHEL * 0.5, -laenge - KACHEL * 0.8, KACHEL * 0.9, KACHEL * 0.7);
+      c.fillStyle = laubFarben[0];
+      c.fill();
+    }
+    c.restore();
+  });
+}
+
+// ===== Grubenwasser: laeuft nach, bis die Sohle durchgehauen ist =====
+
+let zulaufUhr = 0;
+let versickertGemeldet = false;
+
+/// Kacheln, in denen das Grubenwasser in der Weitung steht (von unten nach oben)
+function grubenwasserKacheln() {
+  const w = ALT.weitung, liste = [];
+
+  for (let y = w.y1; y >= w.y1 - 1; y--) {
+    for (let x = w.x0 + 1; x <= w.x1 - 1; x++) liste.push([x, y]);
+  }
+  return liste;
+}
+
+/// Ist die Sohle unter dem Wasser noch geschlossen? Sonst laeuft das Wasser nach unten ab
+function sohleDicht() {
+  const w = ALT.weitung;
+
+  for (let x = w.x0 + 1; x <= w.x1 - 1; x++) {
+    const t = kachel(x, w.y1 + 1);
+    if (!KACHELARTEN[t].fest) return false;
+  }
+  return true;
+}
+
+/// Jede Sekunde: Zulauf aus dem Gebirge oder Versickern durch die durchgehauene Sohle
+function aktualisiereGrubenwasser() {
+  zulaufUhr++;
+
+  // Sohle offen: das Wasser versickert nach und nach in die Tiefe
+  if (!sohleDicht()) {
+    const nass = grubenwasserKacheln().reverse().find(([x, y]) => kachel(x, y) === K.wasser);
+    if (!nass) return;
+
+    welt[idx(nass[0], nass[1])] = K.luft;
+    if (!versickertGemeldet && Math.abs(spieler.x - nass[0]) < 12) {
+      meldung('Gurgel, gurgel … Die Sohle ist durchgehauen – das Grubenwasser läuft in die Tiefe ab. Jetzt bleibt die Weitung trocken.');
+      versickertGemeldet = true;
+    }
+    return;
+  }
+
+  // Sohle dicht: alle paar Sekunden steigt das Wasser um eine Kachel
+  versickertGemeldet = false;
+  if (zulaufUhr < 6) return;
+  zulaufUhr = 0;
+
+  const frei = grubenwasserKacheln().find(([x, y]) => kachel(x, y) === K.luft);
+  if (frei) welt[idx(frei[0], frei[1])] = K.wasser;
+}
+
+// ===== Abraum abkippen: aus gesammeltem Gestein wird eine Halde =====
+
+/// Taubes Gestein; Erz und Salz bleiben im Vorrat, ebenso zwei Sandsteine fuer einen Staender
+const ABRAUM = [K.erde, K.sandstein, K.kalk, K.schiefer, K.basalt, K.granit, K.tiefgestein, K.eisenhut];
+const ABRAUM_RESERVE = { [K.sandstein]: 2 };
+const ABRAUM_JE_KACHEL = 2;
+
+/// Mehr Gestein kann Druschi nicht tragen; der Hunt fasst deutlich mehr
+const TRAGEGRENZE = 40;
+const HUNT_LADUNG = 60;
+
+let kippSchutt = 0;
+let kippUhr = 0;
+let haldeBemerkt = false;
+let vollGemeldetBis = 0;
+
+/// Wie viel Abraum hat Druschi dabei? (ohne die Reserve)
+function abraumImVorrat() {
+  return ABRAUM.reduce((summe, t) => summe + Math.max(0, (inventar[t] || 0) - (ABRAUM_RESERVE[t] || 0)), 0);
+}
+
+/// Bis zu "hoechstens" Brocken Abraum aus dem Vorrat nehmen; gibt die Menge zurueck
+function nimmAbraum(hoechstens) {
+  let rest = Math.min(hoechstens, abraumImVorrat());
+  const genommen = rest;
+
+  ABRAUM.forEach(t => {
+    const nimm = Math.min(rest, Math.max(0, (inventar[t] || 0) - (ABRAUM_RESERVE[t] || 0)));
+    inventar[t] = (inventar[t] || 0) - nimm;
+    rest -= nimm;
+  });
+
+  // Basalt aus dem Bruch, der weg ist, kann der Besitzer nicht mehr einkassieren
+  bruchBasalt = Math.min(bruchBasalt, inventar[K.basalt] || 0);
+  return genommen;
+}
+
+/// Stehender Hunt direkt neben Druschi (oder null)
+function huntNebenSpieler() {
+  return hunte.find(h => h.id !== fahrt && Math.abs(h.x - spieler.x) < 1.8 && Math.abs(h.ty + 1 - spieler.y) < 1.6) || null;
+}
+
+/// Gehauenes Gestein: in den Vorrat, bei voller Tasche in einen Hunt daneben; true, wenn es untergebracht ist
+function verstaueGestein(t, tx, ty) {
+  if (!ABRAUM.includes(t) || abraumImVorrat() < TRAGEGRENZE) return false;
+
+  // Ist ein Hunt in der Naehe, fuellt Druschi gleich den Hunt (wie am Fuellort)
+  const h = hunte.find(x => x.id !== fahrt && Math.abs(x.x - (tx + 0.5)) < 3.5 && Math.abs(x.ty - ty) < 3 && (x.ladung || 0) < HUNT_LADUNG);
+  if (h) {
+    h.ladung = (h.ladung || 0) + 1;
+    return true;
+  }
+
+  if (performance.now() > vollGemeldetBis) {
+    meldung(`Druschi kann nicht mehr Gestein tragen (${TRAGEGRENZE} Brocken). Über Tage abkippen (K) – oder unter Tage einen Hunt daneben stellen und ihn vollladen.`);
+    vollGemeldetBis = performance.now() + 15000;
+  }
+  return true;
+}
+
+/// Taste K: Hunt auskippen, Abraum in den Hunt laden oder ueber Tage abkippen
+function kippeAbraum() {
+  const gefahren = hunte.find(h => h.id === fahrt);
+  const ueberTage = spielerTiefe() <= 1;
+
+  // Im Hunt: ueber Tage auskippen
+  if (gefahren) {
+    if (!(gefahren.ladung > 0)) { meldung('Der Hunt ist leer.'); return; }
+    if (!ueberTage) { meldung('Fahr den Hunt erst über die Gleise nach über Tage – erst dort darf er auf die Halde.'); return; }
+    kippeAus(gefahren.ladung);
+    gefahren.ladung = 0;
+    return;
+  }
+
+  // Unter Tage: in den Hunt daneben laden
+  const daneben = huntNebenSpieler();
+  if (!ueberTage) {
+    if (!daneben) {
+      meldung('Unter Tage kippst du nichts ab – damit würdest du dir die Strecke zuschütten. Stell einen Hunt daneben und lad ihn voll (K), dann fahr ihn raus.');
+      return;
+    }
+
+    const platz = HUNT_LADUNG - (daneben.ladung || 0);
+    const geladen = nimmAbraum(platz);
+    if (!geladen) { meldung(platz ? 'Du hast keinen Abraum dabei.' : 'Der Hunt ist voll – ab nach über Tage damit!'); return; }
+    daneben.ladung = (daneben.ladung || 0) + geladen;
+    meldung(`${geladen} Brocken in den Hunt geladen (${daneben.ladung}/${HUNT_LADUNG}). Einsteigen (E), rausfahren und dort mit K auskippen.`);
+    aktualisiereLeiste();
+    return;
+  }
+
+  // Ueber Tage: was Druschi dabeihat und ein beladener Hunt daneben, alles auf die Halde
+  let menge = nimmAbraum(Math.floor(abraumImVorrat() / ABRAUM_JE_KACHEL) * ABRAUM_JE_KACHEL);
+  if (daneben && daneben.ladung > 0) {
+    menge += daneben.ladung;
+    daneben.ladung = 0;
+  }
+
+  if (menge < ABRAUM_JE_KACHEL) {
+    meldung('Du hast nicht genug Abraum dabei – erst mal Gestein hauen.');
+    return;
+  }
+  kippeAus(menge);
+  aktualisiereLeiste();
+}
+
+/// Gestein im Hunt: ein Haufen, der mit der Ladung waechst
+function maleHuntLadung(c, h) {
+  const mx = h.x * KACHEL, rand = (h.ty + GLEIS_OBEN) * KACHEL - 27;
+  const hoehe = 3 + 9 * Math.min(1, h.ladung / HUNT_LADUNG);
+  c.save();
+  c.beginPath();
+  c.moveTo(-14 + mx, rand);
+  c.quadraticCurveTo(mx, rand - hoehe * 2, 14 + mx, rand);
+  c.closePath();
+  c.fillStyle = '#9a9488';
+  c.fill();
+  c.strokeStyle = '#4e4a44';
+  c.lineWidth = 1.2;
+  c.stroke();
+
+  // Ein paar Brocken
+  [[-7, 0.35], [2, 0.6], [8, 0.3]].forEach(([dx, anteil]) => {
+    oval(c, mx + dx, rand - hoehe * anteil, 2.6, 2);
+    c.fillStyle = '#c8c2b6';
+    c.fill();
+  });
+  c.restore();
+}
+
+/// Abraum auf die Halde: rieselt vor Druschi herunter
+function kippeAus(menge) {
+  kippSchutt += Math.ceil(menge / ABRAUM_JE_KACHEL);
+  meldung(`${menge} Brocken Abraum gekippt – daraus wird eine kleine Halde.`);
+
+  // Am Steinbruch hoert man das Gepolter; eine fremde Halde vor dem Gelaende macht den Besitzer misstrauisch
+  if (spieler.x > BRUCH.links - 10 && spieler.x < BRUCH.rechts + 4) {
+    haldeBemerkt = true;
+    besitzerHoertKlopfen('Wer kippt mir da Schutt vors Gelände?! Na warte …');
+  }
+}
+
+/// Abgekippten Schutt Kachel fuer Kachel vor Druschi herunterrieseln lassen
+function rieselSchutt(dt) {
+  if (!kippSchutt) return;
+  kippUhr += dt;
+  if (kippUhr < 0.12) return;
+  kippUhr = 0;
+
+  const x = Math.floor(spieler.x) + spieler.blick * 2;
+  if (x < 1 || x >= BREITE - 1) { kippSchutt = 0; return; }
+
+  // Ueber dem bestehenden Kegel einwerfen
+  let y = Math.floor(spieler.y) - 2;
+  while (y > 0 && kachel(x, y) !== K.luft) y--;
+
+  if (y <= 0 || ueberlapptSpieler(x, y)) {
+    meldung('Hier ist kein Platz mehr für Abraum – dreh dich um oder geh ein Stück weiter.');
+    inventar[K.erde] = (inventar[K.erde] || 0) + kippSchutt * ABRAUM_JE_KACHEL;
+    kippSchutt = 0;
+    aktualisiereLeiste();
+    return;
+  }
+
+  welt[idx(x, y)] = K.halde;
+  kippSchutt--;
+  partikel.push({ x: x + 0.5, y: y + 0.5, vx: (Math.random() - 0.5) * 3, vy: -2, leben: 0.5, farbe: '#aaa49a' });
+}
+
+/// Haldenschutt rutscht: faellt in Loecher und Wasser, rollt seitlich ab, bis die Boeschung steht
+function bewegeHaldenschutt(x, y) {
+  const unten = kachel(x, y + 1);
+
+  // Senkrecht fallen; Wasser wird dabei zugeschuettet
+  if (!istFest(x, y + 1) && unten !== K.lava && !ueberlapptSpieler(x, y + 1)) {
+    if (unten === K.dynamit) ladungen = ladungen.filter(l => l.tx !== x || l.ty !== y + 1);
+    welt[idx(x, y + 1)] = K.halde;
+    welt[idx(x, y)] = K.luft;
+    return;
+  }
+
+  // Seitlich abrollen (Boeschungswinkel etwa 45 Grad); die alte Halde am Mundloch ist laengst gesetzt
+  if (x >= ALT.links && x <= ALT.links + 5) return;
+  const seiten = Math.random() < 0.5 ? [-1, 1] : [1, -1];
+  for (const s of seiten) {
+    if (kachel(x + s, y) !== K.luft || istFest(x + s, y + 1) || kachel(x + s, y + 1) === K.lava) continue;
+    if (ueberlapptSpieler(x + s, y) || ueberlapptSpieler(x + s, y + 1)) continue;
+    welt[idx(x + s, y)] = K.halde;
+    welt[idx(x, y)] = K.luft;
+    return;
+  }
+}
+
+// ===== Uran: Geigerzaehler, Dosis und UV-Lampe =====
+
+/// Wie stark ein Mineral strahlt (Pechblende = 1); die Sekundaerminerale enthalten weniger Uran pro Stueck
+const STRAHLER = { uraninit: 1, autunit: 0.3, torbernit: 0.3, uranocircit: 0.3, cuprosklodowskit: 0.25 };
+
+/// Farbe unter kurzwelligem UV; Torbernit und Cuprosklodowskit loescht das Kupfer
+const UV_LEUCHTEN = { autunit: '#d6ff3a', uranocircit: '#d6ff3a', fluorit: '#7a82ff', benitoit: '#4aa8ff' };
+
+const UV_REICHWEITE = 7;
+const GEIGER_REICHWEITE = 14;
+/// Dosisgrenzen in µSv: Warnung, schlapp, Strahlenschutz greift ein
+const DOSIS_WARNUNG = 50;
+const DOSIS_SCHLAPP = 75;
+const DOSIS_GRENZE = 100;
+
+/// Eine Sekunde im Spiel zaehlt fuer die Dosis wie 15 Sekunden Aufenthalt
+const DOSIS_ZEITRAFFER = 15;
+
+/// Verfaerbung durch Strahlung (Farbzentren): ab welcher Bestrahlung (µSv) welche Variante
+const VERFAERBUNG = {
+  quarz: [[0, 30, 1], [1, 80, 2]],
+  fluorit: [[0, 50, 4], [1, 50, 4], [2, 50, 4], [3, 50, 4]],
+  halit: [[0, 40, 2], [1, 40, 2]]
+};
+
+let schlapp = false;
+let schlafUhr = 0;
+let verfaerbUhr = 0;
+
+let uvAn = false;
+let geigerAn = false;
+let geigerAutomatisch = false;
+let geigerVonHandAus = false;
+let geigerRuhe = 0;
+let dosis = 0;
+let dosisStufe = 0;
+let dosisleistung = 0.1;
+let geigerUhr = 0;
+let geigerWarnungBis = 0;
+let tickBis = 0;
+let audioKontext = null;
+let tickPuffer = null;
+
+/// Uran- und Fluoritnester verstecken: Pechblende tief im Erzgang, Fluorit weiter oben,
+/// die bunten Uranglimmer im Eisernen Hut. Ihr Inhalt steht schon fest.
+function baueUranNester(r) {
+  const gang = [], hut = [];
+
+  for (let y = 0; y < HOEHE - 2; y++) {
+    for (let x = 0; x < BREITE; x++) {
+      const t = welt[idx(x, y)];
+      if (imBruch(x, y)) continue;
+
+      if (t === K.erzgang) gang.push([x, y]);
+      else if (t === K.eisenhut) hut.push([x, y]);
+    }
+  }
+
+  // Zufaellig ein paar Stellen ziehen (ohne doppelte)
+  const ziehe = (liste, anzahl) => {
+    const kopie = [...liste], gezogen = [];
+
+    while (kopie.length && gezogen.length < anzahl) {
+      gezogen.push(kopie.splice(Math.floor(r() * kopie.length), 1)[0]);
+    }
+    return gezogen;
+  };
+
+  const setzeNest = ([x, y], huelle, ziel) => {
+    welt[idx(x, y)] = K.fund;
+    fundHuelle[idx(x, y)] = huelle;
+    fundZiel.set(idx(x, y), ziel);
+  };
+
+  // Der Gang von unten nach oben: das tiefe Drittel fuer die Pechblende
+  gang.sort((a, b) => b[1] - a[1]);
+  const grenze = Math.ceil(gang.length * 0.35);
+  ziehe(gang.slice(0, grenze), 4).forEach(p => setzeNest(p, 2, 'uraninit'));
+  ziehe(gang.slice(grenze), 3).forEach(p => setzeNest(p, 2, 'fluorit'));
+
+  // Im Eisernen Hut die Sekundaerminerale
+  const sekundaer = ['autunit', 'torbernit', 'uranocircit', 'autunit', 'cuprosklodowskit', 'uranocircit'];
+  ziehe(hut, 6).forEach((p, k) => setzeNest(p, 3, sekundaer[k % sekundaer.length]));
+}
+
+/// Wie viel Gestein liegt zwischen zwei Punkten? (Kacheln entlang der Linie)
+function gesteinDazwischen(x1, y1, x2, y2) {
+  const schritte = Math.ceil(Math.hypot(x2 - x1, y2 - y1) * 2);
+  let fest = 0, zuletzt = -1;
+
+  for (let s = 1; s < schritte; s++) {
+    const tx = Math.floor(x1 + (x2 - x1) * s / schritte), ty = Math.floor(y1 + (y2 - y1) * s / schritte);
+    const i = idx(tx, ty);
+    if (i === zuletzt) continue;
+    zuletzt = i;
+
+    if (istFest(tx, ty) && kachel(tx, ty) !== K.fund) fest++;
+  }
+  return fest;
+}
+
+/// Wie stark strahlt, was Druschi bei sich traegt? (Fundstuecke, Tasche, Yellowcake, Atomakku, Uranglas)
+function getrageneStrahlung() {
+  let staerke = (inventar[K.uran] || 0) * 0.2 + (inventar[K.atomakku] || 0) * 0.15 + (inventar[K.uranglas] || 0) * 0.03;
+  fundstuecke.forEach(f => { if (STRAHLER[f.ziel]) staerke += STRAHLER[f.ziel]; });
+  tasche.forEach(e => { if (STRAHLER[e.wesen]) staerke += STRAHLER[e.wesen]; });
+  return staerke;
+}
+
+/// Dosisleistung an Druschis Platz in µSv/h
+function messeDosisleistung() {
+  return dosisleistungAn(spieler.x, spieler.y - 0.8, null, true);
+}
+
+/// Dosisleistung an einer Stelle in µSv/h: Abstandsquadrat, Gestein schirmt ab.
+/// "ohne" ist die Figur selbst (strahlt sich nicht an), mitTasche = Druschis Gepaeck aus naechster Naehe
+function dosisleistungAn(sx, sy, ohne, mitTasche) {
+  let summe = 0.1;
+
+  const quelle = (x, y, staerke) => {
+    const d2 = (x - sx) ** 2 + (y - sy) ** 2;
+    if (d2 > GEIGER_REICHWEITE ** 2) return;
+    const schirm = Math.pow(0.45, gesteinDazwischen(sx, sy, x, y));
+    summe += staerke * 40 / (d2 + 0.5) * schirm;
+  };
+
+  // Nester im Gestein
+  fundZiel.forEach((ziel, i) => {
+    if (!STRAHLER[ziel] || welt[i] !== K.fund) return;
+    quelle(i % BREITE + 0.5, Math.floor(i / BREITE) + 0.5, STRAHLER[ziel]);
+  });
+
+  // Abgelegte Fundstuecke und Mineraltchi in der Welt
+  entitaeten.forEach(e => {
+    if (e === ohne) return;
+    const id = e.art === 'fund' ? e.ziel : e.wesen;
+    if (STRAHLER[id]) quelle(e.x, e.y - 0.5, STRAHLER[id]);
+  });
+
+  // Uranglas strahlt ein klein wenig
+  const ux = Math.floor(sx), uy = Math.floor(sy);
+  for (let ty = uy - 6; ty <= uy + 6; ty++) {
+    for (let tx = ux - 6; tx <= ux + 6; tx++) {
+      if (kachel(tx, ty) === K.uranglas) quelle(tx + 0.5, ty + 0.5, 0.03);
+    }
+  }
+
+  // Druschis Gepaeck: fuer ihn selbst aus naechster Naehe, fuer andere von seinem Platz aus
+  const getragen = getrageneStrahlung();
+  if (mitTasche) summe += getragen * 40 / 0.66;
+  else if (getragen) quelle(spieler.x, spieler.y - 0.8, getragen);
+
+  return summe;
+}
+
+/// Strahlenschutz: Uranfunde, Yellowcake und Atomakkus werden eingezogen, die Dosis zurueckgesetzt
+function strahlenschutzGreiftEin() {
+  const funde = fundstuecke.filter(f => STRAHLER[f.ziel]).length;
+  fundstuecke = fundstuecke.filter(f => !STRAHLER[f.ziel]);
+  const gelb = inventar[K.uran] || 0, atom = inventar[K.atomakku] || 0, glas = inventar[K.uranglas] || 0;
+  inventar[K.uran] = 0;
+  inventar[K.atomakku] = 0;
+  inventar[K.uranglas] = 0;
+  atomRest = 0;
+
+  const weg = [];
+  if (funde) weg.push(funde === 1 ? 'ein Uranfund' : funde + ' Uranfunde');
+  if (gelb) weg.push(gelb + '× Yellowcake');
+  if (atom) weg.push(atom === 1 ? 'der Atomakku' : atom + ' Atomakkus');
+  if (glas) weg.push(glas + '× Uranglas');
+  const liste = weg.length > 1 ? weg.slice(0, -1).join(', ') + ' und ' + weg[weg.length - 1] : weg[0];
+
+  dosis = 0;
+  dosisStufe = 0;
+  schlapp = true;
+  schlafUhr = 0;
+  meldung(`Piep, piep, piep! Das Dosimeter zeigt ${DOSIS_GRENZE} µSv – der Strahlenschutz greift ein.${liste ? ' Eingezogen: ' + liste + '.' : ''} Deine Dosis steht wieder auf null, aber Druschi ist schlapp, bis er eine Nacht über Tage ausgeschlafen hat.`);
+  aktualisiereLeiste();
+}
+
+/// Mineraltchi neben Uran verfaerben sich mit der Zeit (Rauchquarz, Morion, Antozonit, blaues Steinsalz)
+function bestrahleMineraltchi(dt) {
+  const spielerRate = dosisleistung;
+
+  const bestrahle = (e, rate) => {
+    const regeln = VERFAERBUNG[e.wesen];
+    if (!regeln) return;
+    e.bestrahlung = (e.bestrahlung || 0) + rate * dt * DOSIS_ZEITRAFFER / 3600;
+
+    const regel = regeln.find(([von, ab]) => e.variante === von && e.bestrahlung >= ab);
+    if (!regel) return;
+    e.variante = regel[2];
+    const w = wesenNach(e.wesen);
+    meldung(`${w.name} hat sich durch die Strahlung verfärbt – ${w.varianten[e.variante].notiz}`);
+  };
+
+  entitaeten.forEach(e => {
+    if (e.art !== 'tchi') return;
+    bestrahle(e, dosisleistungAn(e.x, e.y - 0.5, e, false));
+  });
+  tasche.forEach(e => bestrahle(e, spielerRate));
+}
+
+/// Kurzes Knacken fuer den Geigerzaehler (WebAudio, erst nach einem Klick oder Tastendruck erlaubt)
+function tick() {
+  if (!audioKontext) return;
+
+  if (!tickPuffer) {
+    const laenge = Math.ceil(audioKontext.sampleRate * 0.003);
+    tickPuffer = audioKontext.createBuffer(1, laenge, audioKontext.sampleRate);
+    const daten = tickPuffer.getChannelData(0);
+    for (let k = 0; k < laenge; k++) daten[k] = (Math.random() * 2 - 1) * (1 - k / laenge);
+  }
+
+  const quelle = audioKontext.createBufferSource();
+  const lautstaerke = audioKontext.createGain();
+  lautstaerke.gain.value = 0.5;
+  quelle.buffer = tickPuffer;
+  quelle.connect(lautstaerke).connect(audioKontext.destination);
+  quelle.start();
+}
+
+/// Dosis sammeln (immer) und den Geigerzaehler ticken lassen (wenn an)
+function aktualisiereStrahlung(dt, jetzt) {
+  geigerUhr -= dt;
+  if (geigerUhr <= 0) {
+    geigerUhr = 0.15;
+    dosisleistung = messeDosisleistung();
+  }
+
+  // Dosis sammeln
+  dosis += dosisleistung * dt * DOSIS_ZEITRAFFER / 3600;
+
+  // Stufen: Warnung, schlapp, Strahlenschutz
+  if (dosisStufe < 1 && dosis >= DOSIS_WARNUNG) {
+    meldung(`Dein Dosimeter zeigt schon ${DOSIS_WARNUNG} µSv – die Hälfte der Grenze. Leg das Uran weg oder halte Abstand.`);
+    dosisStufe = 1;
+  }
+  if (dosisStufe < 2 && dosis >= DOSIS_SCHLAPP) {
+    schlapp = true;
+    schlafUhr = 0;
+    meldung(`${DOSIS_SCHLAPP} µSv: Druschi fühlt sich schlapp – er läuft und haut langsamer. Eine Nacht über Tage ausschlafen hilft. Bei ${DOSIS_GRENZE} µSv greift der Strahlenschutz ein!`);
+    dosisStufe = 2;
+  }
+  if (dosis >= DOSIS_GRENZE) strahlenschutzGreiftEin();
+
+  // Schlapp: eine Nacht ueber Tage ausschlafen (etwa 15 Sekunden), dann ist er wieder fit
+  if (schlapp && nachtWert > 0.5 && spielerTiefe() <= 0) {
+    schlafUhr += dt;
+    if (schlafUhr > 15) {
+      schlapp = false;
+      dosis = Math.min(dosis, DOSIS_WARNUNG - 10);
+      dosisStufe = 0;
+      meldung('Druschi hat über Tage ausgeschlafen und ist wieder fit. Glück auf!');
+    }
+  } else {
+    schlafUhr = 0;
+  }
+
+  // Mineraltchi verfaerben sich (einmal pro Sekunde rechnen)
+  verfaerbUhr += dt;
+  if (verfaerbUhr >= 1) {
+    bestrahleMineraltchi(verfaerbUhr);
+    verfaerbUhr = 0;
+  }
+
+  // Automatik: ab 1 µSv/h schaltet er sich selbst ein, nach einer Weile Ruhe wieder aus.
+  // Von Hand ausgeschaltet bleibt er aus, bis es wieder ruhig ist.
+  if (dosisleistung < 0.5) geigerVonHandAus = false;
+
+  if (!geigerAn && dosisleistung > 1 && !geigerVonHandAus) {
+    setzeGeiger(true);
+    geigerAutomatisch = true;
+    meldung('Der Geigerzähler schaltet sich von selbst ein – hier strahlt etwas!');
+  }
+
+  if (geigerAn && geigerAutomatisch) {
+    geigerRuhe = dosisleistung < 0.5 ? geigerRuhe + dt : 0;
+    if (geigerRuhe > 8) {
+      setzeGeiger(false);
+      geigerAutomatisch = false;
+      geigerRuhe = 0;
+    }
+  }
+
+  if (!geigerAn) return;
+
+  // Impulse zufaellig wie beim echten Zaehlrohr; sehr hohe Raten klingen wie Rauschen
+  const impulse = dosisleistung * 1.6;
+  const anzahl = Math.min(6, Math.floor(impulse * dt + Math.random()));
+  for (let k = 0; k < anzahl; k++) tick();
+  if (anzahl) tickBis = jetzt + 60;
+
+  if (dosisleistung > 10 && jetzt > geigerWarnungBis) {
+    meldung(dosisleistung > 40 ? 'Der Geigerzähler rattert wie verrückt – hier ist richtig Uran! Nicht lange stehen bleiben.' : 'Der Geigerzähler wird schneller – irgendwo hier steckt Uran im Gestein.');
+    geigerWarnungBis = jetzt + 45000;
+  }
+}
+
+/// Zahl mit Komma
+function deutsch(zahl, stellen) {
+  return zahl.toFixed(stellen).replace('.', ',');
+}
+
+/// Text fuer die Anzeige oben links
+function strahlungsText() {
+  const schlappText = schlapp ? ' · Druschi ist schlapp' : '';
+  if (!geigerAn) return schlappText;
+  const leistung = dosisleistung < 10 ? deutsch(dosisleistung, 2) : deutsch(dosisleistung, 0);
+  return ` · ☢ ${leistung} µSv/h · Dosis ${deutsch(dosis, 1)}/${DOSIS_GRENZE} µSv${schlappText}`;
+}
+
+/// Ist ringsum (Abstand 2) ein Hohlraum? Dann sieht man die Kluftflaechen mit dem Uranglimmer
+function liegtFreiNahe(tx, ty) {
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      if (!istFest(tx + dx, ty + dy)) return true;
+    }
+  }
+  return false;
+}
+
+/// Leuchtender Fleck mit ein paar Glitzerpunkten
+function leuchtFleck(c, x, y, farbe, groesse, jetzt) {
+  const px = x * KACHEL, py = y * KACHEL;
+  const g = c.createRadialGradient(px, py, 0, px, py, KACHEL * groesse);
+  g.addColorStop(0, farbe);
+  g.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  c.globalAlpha = 0.55 + 0.15 * Math.sin(jetzt / 300 + x);
+  c.fillStyle = g;
+  c.fillRect(px - KACHEL * groesse, py - KACHEL * groesse, KACHEL * groesse * 2, KACHEL * groesse * 2);
+  c.globalAlpha = 1;
+  c.fillStyle = farbe;
+
+  for (let k = 0; k < 5; k++) {
+    const wx = Math.sin(x * 12.9 + k * 7.3) * 0.32, wy = Math.cos(y * 7.7 + k * 3.1) * 0.32;
+    c.fillRect(px + wx * KACHEL - 1.5, py + wy * KACHEL - 1.5, 3, 3);
+  }
+}
+
+/// UV-Lampe: violetter Schein, Fluoreszierendes leuchtet ueber der Dunkelheit
+function maleUvLeuchten(c, x0, x1, y0, y1, jetzt) {
+  const sx = spieler.x, sy = spieler.y - 0.8;
+  c.save();
+  c.globalCompositeOperation = 'lighter';
+
+  // Schein der Lampe in Blickrichtung
+  const lx = (sx + spieler.blick * 1.5) * KACHEL, ly = sy * KACHEL;
+  const schein = c.createRadialGradient(lx, ly, 0, lx, ly, UV_REICHWEITE * KACHEL);
+  schein.addColorStop(0, 'rgba(140, 60, 255, 0.28)');
+  schein.addColorStop(1, 'rgba(140, 60, 255, 0)');
+  c.fillStyle = schein;
+  c.fillRect(lx - UV_REICHWEITE * KACHEL, ly - UV_REICHWEITE * KACHEL, UV_REICHWEITE * KACHEL * 2, UV_REICHWEITE * KACHEL * 2);
+
+  // Nester im Gestein, sofern eine Kluft oder Strecke sie anschneidet
+  fundZiel.forEach((ziel, i) => {
+    const farbe = UV_LEUCHTEN[ziel];
+    if (!farbe || welt[i] !== K.fund) return;
+    const tx = i % BREITE, ty = Math.floor(i / BREITE);
+
+    if (tx < x0 || tx > x1 || ty < y0 || ty > y1) return;
+    if (Math.hypot(tx + 0.5 - sx, ty + 0.5 - sy) > UV_REICHWEITE || !liegtFreiNahe(tx, ty)) return;
+    leuchtFleck(c, tx + 0.5, ty + 0.5, farbe, 0.9, jetzt);
+  });
+
+  // Uranglas-Staender leuchten grell gelbgruen
+  for (let ty = y0; ty <= y1; ty++) {
+    for (let tx = x0; tx <= x1; tx++) {
+      if (welt[idx(tx, ty)] !== K.uranglas || Math.hypot(tx + 0.5 - sx, ty + 0.5 - sy) > UV_REICHWEITE) continue;
+      leuchtFleck(c, tx + 0.5, ty + 0.5, '#d6ff3a', 1, jetzt);
+    }
+  }
+
+  // Mineraltchi, die fluoreszieren
+  entitaeten.forEach(e => {
+    if (e.art !== 'tchi' || (e.getragenVon && e.lage === 'in')) return;
+    const farbe = UV_LEUCHTEN[e.wesen];
+    const l = lageVon(e);
+    if (!farbe || Math.hypot(l.x - sx, l.y - sy) > UV_REICHWEITE) return;
+    leuchtFleck(c, l.x, l.y - 0.6 * l.skala, farbe, 0.8 * l.skala, jetzt);
+  });
+
+  c.restore();
+}
+
+/// Geigerzaehler am Guertel: Zeiger und kurzes Aufblitzen bei jedem Impuls
+function maleGeiger(c, jetzt) {
+  const px = (spieler.x - spieler.blick * 0.32) * KACHEL, py = (spieler.y - 0.62) * KACHEL;
+  c.fillStyle = '#e8c23a';
+  c.fillRect(px - 5, py - 4, 10, 8);
+  c.strokeStyle = '#4a3a10';
+  c.lineWidth = 1;
+  c.strokeRect(px - 5, py - 4, 10, 8);
+
+  // Zeiger: logarithmisch von 0,1 bis 100 µSv/h
+  const anteil = begrenze((Math.log10(dosisleistung) + 1) / 3, 0, 1);
+  const winkel = Math.PI * (1.15 + 0.7 * anteil);
+  c.strokeStyle = '#2a2a2a';
+  c.beginPath();
+  c.moveTo(px, py + 2);
+  c.lineTo(px + Math.cos(winkel) * 5, py + 2 + Math.sin(winkel) * 5);
+  c.stroke();
+
+  if (jetzt < tickBis) {
+    c.fillStyle = '#ff4a3a';
+    c.fillRect(px + 2, py - 3, 2, 2);
+  }
+}
+
+/// UV-Lampe an oder aus; sie ersetzt in der Hand das Geleucht
+function schalteUv() {
+  uvAn = !uvAn;
+  document.getElementById('uvKnopf').classList.toggle('aktiv', uvAn);
+  meldung(uvAn ? 'UV-Lampe an. Im Dunkeln leuchten Autunit und Uranocircit grell gelbgrün, Fluorit blau – Torbernit bleibt dunkel. Das Geleucht ist so lange aus.' : 'UV-Lampe aus.');
+}
+
+/// Ton erlauben: Browser spielen erst nach einem Klick oder Tastendruck etwas ab
+function weckeAudio() {
+  try {
+    if (!audioKontext) audioKontext = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioKontext.state === 'suspended') audioKontext.resume();
+  } catch (e) { audioKontext = null; }
+}
+document.addEventListener('pointerdown', weckeAudio);
+document.addEventListener('keydown', weckeAudio);
+
+/// Zaehler ein- oder ausschalten (Knopf mitfuehren)
+function setzeGeiger(an) {
+  geigerAn = an;
+}
+
+/// Geigerzaehler von Hand an oder aus
+function schalteGeiger() {
+  setzeGeiger(!geigerAn);
+  geigerAutomatisch = false;
+  geigerVonHandAus = !geigerAn;
+  weckeAudio();
+
+  meldung(geigerAn ?'Geigerzähler an. Je näher du an Uran kommst, desto schneller tickt er – Gestein dazwischen schirmt ab. Oben links stehen Dosisleistung und deine gesammelte Dosis.' : 'Geigerzähler aus. Die Dosis zählt trotzdem weiter. Von selbst springt er erst wieder an, wenn es zwischendurch ruhig war.');
+}
+
 /// Spieler bewegen: laufen, springen, schwimmen, klettern
 function bewegeSpieler(dt) {
   if (besitzer.zustand === 'abfuehren') return;
@@ -4219,7 +5214,7 @@ function bewegeSpieler(dt) {
   const warAmBoden = spieler.amBoden;
 
   if (richtung) spieler.blick = richtung;
-  spieler.vx = richtung * (imWasser ? 3.5 : 6);
+  spieler.vx = richtung * (imWasser ? 3.5 : 6) * (schlapp ? 0.65 : 1);
   spieler.laeuft = richtung !== 0;
 
   // Senkrechte Geschwindigkeit je nach Umgebung
@@ -4299,7 +5294,8 @@ function baueAb(dt, jetzt) {
 
       if (t === K.wasser && imWetterBereich(tx + 0.5, ty + 0.5)) {
         welt[idx(tx, ty)] = K.luft;
-        meldung(`Grubenwasser abgeschöpft (Lösung: ${loesung}). Kübel für Kübel – so haben die Alten ihre Grube trocken gehalten.`);
+        const nachlauf = sohleDicht() ? ' Aber es sickert ständig nach, solange die Sohle darunter dicht ist.' : '';
+        meldung(`Grubenwasser abgeschöpft (Lösung: ${loesung}). Kübel für Kübel – so haben die Alten ihre Grube trocken gehalten.${nachlauf}`);
         aktualisiereLeiste();
         return;
       }
@@ -4321,7 +5317,7 @@ function baueAb(dt, jetzt) {
 
   // Fortschritt je nach Haerte
   if (!abbau || abbau.tx !== tx || abbau.ty !== ty) abbau = { tx, ty, fortschritt: 0, schlagUhr: 0 };
-  abbau.fortschritt += dt * 1000 / a.haerte;
+  abbau.fortschritt += dt * 1000 / a.haerte * (schlapp ? 0.6 : 1);
 
   // Jeder Schlag mit dem Schlaegel auf das Eisen gibt ein paar Funken
   abbau.schlagUhr += dt;
@@ -4349,10 +5345,17 @@ function entferneKachel(tx, ty) {
   // Fundstueck: Inhalt wird beim Ausgraben schon festgelegt
   if (t === K.fund) {
     const h = HUELLEN[fundHuelle[i]];
-    const ziel = h.kinder[Math.floor(Math.random() * h.kinder.length)];
-    fundstuecke.push({ huelle: fundHuelle[i], ziel, ausBruch: imBruch(tx, ty), ausAlt: imAltbergbau(tx, ty) });
+
+    // Nester haben ihren Inhalt schon; Uranminerale gibt es nur dort, wo Geigerzaehler und UV sie finden
+    const vorgabe = fundZiel.get(i);
+    fundZiel.delete(i);
+    const zufall = h.kinder.filter(k => !STRAHLER[k]);
+    const ziel = vorgabe && h.kinder.includes(vorgabe) ? vorgabe : zufall[Math.floor(Math.random() * zufall.length)];
+
+    fundstuecke.push({ huelle: fundHuelle[i], ziel, ausBruch: istBruchBeute(tx, ty), ausAlt: imAltbergbau(tx, ty) });
     fundHuelle[i] = -1;
-    meldung(`Fundstück: ${h.name}! ${h.text} Wähle es in der Leiste und leg es ab.`);
+    const warnung = STRAHLER[ziel] && geigerAn ? ' Der Geigerzähler rattert – da steckt Uran drin! Nicht zu lange mit dir herumtragen.' : '';
+    meldung(`Fundstück: ${h.name}! ${h.text} Wähle es in der Leiste und leg es ab.${warnung}`);
   } else if (t === K.dynamit) {
 
     // Gelegte Ladung wieder aufnehmen: Zuendschnur austreten
@@ -4370,13 +5373,31 @@ function entferneKachel(tx, ty) {
     for (let y = oben; y <= unten; y++) if (y !== ty) welt[idx(tx, y)] = K.luft;
     inventar[K.seil] = (inventar[K.seil] || 0) + 1;
     meldung('Seil abgenommen und aufgerollt.');
+  } else if (t === K.halde) {
+
+    // Klauben: Auf jeder Halde liegt mal ein Stueck, das beim Hauen uebersehen wurde
+    if (Math.random() < 0.07) {
+      const alteHalde = tx >= ALT.links && tx <= ALT.links + 5;
+      const huelle = alteHalde ? 2 : Math.floor(Math.random() * 6);
+      const zufall = HUELLEN[huelle].kinder.filter(k => !STRAHLER[k]);
+      const ziel = zufall[Math.floor(Math.random() * zufall.length)];
+      fundstuecke.push({ huelle, ziel, ausBruch: istBruchBeute(tx, ty), ausAlt: false });
+      meldung(`Beim Klauben auf der Halde entdeckt: ${HUELLEN[huelle].name}! Das hat beim Hauen wohl jemand übersehen.`);
+    }
   } else {
     const gibt = KACHELARTEN[t].gibt;
-    if (gibt) inventar[gibt] = (inventar[gibt] || 0) + 1;
-    if (gibt === K.basalt && imBruch(tx, ty)) bruchBasalt++;
+
+    // Bei voller Tasche geht das Gestein in einen Hunt daneben, sonst bleibt es liegen (weg)
+    if (gibt && !verstaueGestein(gibt, tx, ty)) {
+      inventar[gibt] = (inventar[gibt] || 0) + 1;
+      if (gibt === K.basalt && istBruchBeute(tx, ty)) bruchBasalt++;
+    }
   }
 
   welt[i] = K.luft;
+
+  // Stamm von unten durchgehauen: der Baum darueber faellt um
+  if (t === K.stamm && kachel(tx, ty - 1) === K.stamm) faelleBaum(tx, ty);
 
   // Am Fundament der Bude hoert man das Klopfen
   if (istFundament(tx, ty)) besitzerHoertKlopfen();
@@ -4395,7 +5416,10 @@ function setze() {
   if (!inReichweite(tx, ty)) return;
   const t = kachel(tx, ty);
   const frei = t === K.luft || KACHELARTEN[t].fluessig;
-  if (!frei) return;
+
+  // Ein Hunt darf auch aufs verlegte Gleis (sonst muss die Kachel frei sein)
+  const huntAufsGleis = ausgewaehlt === K.hunt && istGleis(tx, ty);
+  if (!frei && !huntAufsGleis) return;
 
   // Fundstueck ablegen
   if (ausgewaehlt === 'fund') {
@@ -4418,8 +5442,8 @@ function setze() {
 
   // Hunt aufs Gleis (oder auf festen Boden) stellen
   else if (ausgewaehlt === K.hunt) {
-    if (!(inventar[K.hunt] > 0) || (t !== K.luft && t !== K.gleis) || !istFest(tx, ty + 1)) return;
-    if (hunte.some(h => Math.floor(h.x) === tx && h.ty === ty)) return;
+    if (!(inventar[K.hunt] > 0) || (t !== K.luft && !huntAufsGleis) || !istFest(tx, ty + 1)) return;
+    if (hunte.some(h => Math.abs(h.x - (tx + 0.5)) < 1 && h.ty === ty)) return;
     hunte.push({ id: naechsteId++, x: tx + 0.5, ty, vx: 0 });
     inventar[K.hunt]--;
     meldung('Hunt aufgestellt. Mit E (oder Klick auf den Hunt) steigst du ein, mit W wieder aus.');
@@ -4463,6 +5487,13 @@ function setze() {
   // Block bauen
   else {
     if (!(inventar[ausgewaehlt] > 0)) return;
+
+    // Die Lampenstube steht ueber Tage auf festem Boden
+    if (ausgewaehlt === K.lampenstube && (ty - oberflaeche[tx] > 0 || !istFest(tx, ty + 1))) {
+      meldung('Die Lampenstube gehört über Tage auf festen Boden – dort, wo die Bergleute vor der Schicht ihr Geleucht holen.');
+      return;
+    }
+
     if (KACHELARTEN[ausgewaehlt].fest && ueberlapptSpieler(tx, ty)) return;
     welt[idx(tx, ty)] = ausgewaehlt;
     inventar[ausgewaehlt]--;
@@ -4524,13 +5555,16 @@ function schiesse(lx, ly, jetzt) {
       // Fundstuecke zerspringen beim Schiessen, uebrig bleibt nur Haufwerk
       if (t === K.fund) {
         fundHuelle[i] = -1;
+        fundZiel.delete(i);
         zersprungen++;
         const gestein = KACHELARTEN[hinter[i]];
-        if (gestein && gestein.gibt) inventar[gestein.gibt] = (inventar[gestein.gibt] || 0) + 1;
-        if (gestein && gestein.gibt === K.basalt && imBruch(tx, ty)) bruchBasalt++;
-      } else if (a.gibt) {
+        if (gestein && gestein.gibt && !verstaueGestein(gestein.gibt, tx, ty)) {
+          inventar[gestein.gibt] = (inventar[gestein.gibt] || 0) + 1;
+          if (gestein.gibt === K.basalt && istBruchBeute(tx, ty)) bruchBasalt++;
+        }
+      } else if (a.gibt && !verstaueGestein(a.gibt, tx, ty)) {
         inventar[a.gibt] = (inventar[a.gibt] || 0) + 1;
-        if (a.gibt === K.basalt && imBruch(tx, ty)) bruchBasalt++;
+        if (a.gibt === K.basalt && istBruchBeute(tx, ty)) bruchBasalt++;
       }
 
       welt[i] = K.luft;
@@ -4601,7 +5635,103 @@ function spielerAusserGelaende() {
 
 /// Brennt das Geleucht am Helm?
 function geleuchtAn() {
-  return !geleuchtAus && (spielerTiefe() > 1 || nachtWert > 0.5);
+  return !geleuchtAus && !uvAn && akku > 0 && (spielerTiefe() > 1 || nachtWert > 0.5);
+}
+
+/// Wie hell das Geleucht noch brennt: unter 20 % wird es schwaecher und flackert
+function akkuHelligkeit() {
+  if (akku >= 20) return 1;
+  const flackern = ruhig.matches ? 1 : 0.85 + Math.random() * 0.15;
+  return (0.45 + 0.55 * akku / 20) * flackern;
+}
+
+/// Laedt das Solarpanel gerade? Ueber Tage, bei Tag, nicht im Hunt unter Tage
+function solarLaedt() {
+  return spielerTiefe() <= 0 && nachtWert < 0.3 && akku < 100;
+}
+
+/// Kleines Solarpanel hinten am Rucksack; glaenzt, wenn es laedt
+function maleSolarpanel(c) {
+  const px = (spieler.x - spieler.blick * 0.42) * KACHEL, py = (spieler.y - 1.05) * KACHEL;
+  c.save();
+  c.translate(px, py);
+  c.rotate(-spieler.blick * 0.25);
+  c.fillStyle = '#1e3a6a';
+  c.fillRect(-5, -4, 10, 8);
+  c.strokeStyle = '#c8ccd4';
+  c.lineWidth = 1;
+  c.strokeRect(-5, -4, 10, 8);
+  c.beginPath();
+  c.moveTo(0, -4); c.lineTo(0, 4);
+  c.moveTo(-5, 0); c.lineTo(5, 0);
+  c.stroke();
+  if (solarLaedt()) {
+    c.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    c.fillRect(-4, -3, 3, 2);
+  }
+  c.restore();
+}
+
+/// Steht Druschi in der Lampenstube?
+function inLampenstube() {
+  return kachel(Math.floor(spieler.x), Math.floor(spieler.y - 0.5)) === K.lampenstube;
+}
+
+/// Akku entladen, solange das Geleucht brennt; in der Lampenstube laden (30 s von leer auf voll)
+function aktualisiereAkku(dt) {
+  if (inLampenstube()) {
+    if (akku < 100 && !laedtGemeldet) {
+      meldung('Druschi hängt den Akku in der Lampenstube ans Ladebrett …');
+      laedtGemeldet = true;
+    }
+    const vorher = akku;
+    akku = Math.min(100, akku + dt * 100 / 30);
+    if (vorher < 100 && akku >= 100) meldung('Akku voll geladen. Glück auf!');
+    akkuStufe = 0;
+    return;
+  }
+  laedtGemeldet = false;
+
+  // Entladen: voll reicht etwa fuenf Minuten
+  if (geleuchtAn()) akku = Math.max(0, akku - dt * 100 / 300);
+
+  // Solarpanel am Rucksack: nur ueber Tage bei Tageslicht, langsam (etwa drei Minuten bis voll)
+  if (solarLaedt()) akku = Math.min(100, akku + dt * 100 / 180);
+
+  // Atomakku: laedt auch unter Tage und nachts nach (etwa vier Minuten bis voll), bis seine eigene Ladung verbraucht ist
+  if (inventar[K.atomakku] > 0 && akku < 100) {
+    if (atomRest <= 0) atomRest = ATOM_LADUNG;
+    const nach = Math.min(dt * 100 / 240, 100 - akku, atomRest);
+    akku += nach;
+    atomRest -= nach;
+
+    if (atomRest <= 0) {
+      inventar[K.atomakku]--;
+      atomRest = 0;
+      meldung(inventar[K.atomakku] > 0 ? `Ein Atomakku ist erschöpft – der nächste übernimmt (noch ${inventar[K.atomakku]}).` : 'Der Atomakku ist erschöpft. Für einen neuen brauchst du Yellowcake aus Pechblende und Erzgang.');
+      aktualisiereLeiste();
+    }
+  }
+  if (akku > 20) akkuStufe = 0;
+  else if (akku > 0 && akkuStufe === 2) akkuStufe = 1;
+
+  // Leer: Ersatzakku einstecken, falls einer dabei ist
+  if (akku <= 0 && inventar[K.akku] > 0) {
+    inventar[K.akku]--;
+    akku = 100;
+    akkuStufe = 0;
+    meldung(`Druschi tauscht den leeren Akku gegen einen Ersatzakku (noch ${inventar[K.akku]} dabei). Der leere lädt nicht mehr – tagsüber lädt aber das Solarpanel den neuen nach.`);
+    aktualisiereLeiste();
+    return;
+  }
+
+  if (akkuStufe === 0 && akku <= 20) {
+    meldung(inventar[K.akku] > 0 ? 'Das Geleucht wird schwächer – gleich ist der Akku leer, dann kommt der Ersatzakku dran.' : 'Das Geleucht wird schwächer – der Akku ist fast leer und du hast keinen Ersatzakku. Raus ans Tageslicht zum Solarladen oder einen Ersatzakku basteln!');
+    akkuStufe = 1;
+  } else if (akkuStufe === 1 && akku <= 0) {
+    meldung('Der Akku ist leer – das Geleucht ist aus. Froschlampen in der Strecke helfen weiter. Tagsüber lädt das Solarpanel, oder du bastelst einen Ersatzakku.');
+    akkuStufe = 2;
+  }
 }
 
 /// Wie weit sieht der Besitzer gerade? Nach einem Bergschaden ist er wachsamer
@@ -4653,7 +5783,7 @@ function maleSprechblase(c, px, py, text, randfarbe) {
 
 /// Ist der Besitzer gerade besonders wachsam?
 function istWachsam() {
-  return bergschaden.aktiv || schildBemerkt;
+  return bergschaden.aktiv || schildBemerkt || haldeBemerkt;
 }
 
 /// Liegt das Schild um? Dann die Zeile des Bodens, auf dem es liegt, sonst null
@@ -4669,6 +5799,7 @@ function richteSchildAuf() {
   const schildX = BRUCH.sohleX - 2;
   const grund = schildGrund();
   schildBemerkt = false;
+  haldeBemerkt = false;
   if (grund === null) return;
 
   for (let y = oberflaeche[schildX]; y < grund; y++) {
@@ -4832,6 +5963,12 @@ function besitzerHoertKnall(lx, ly) {
   if (lx < BRUCH.links - 14 || lx > BRUCH.rechts + 8 || ly > OBERFLAECHE + 16) return;
   if (besitzer.zustand === 'jagd') return;
 
+  // Schiessen gehoert nicht zum Sammelschein
+  if (sammelschein) {
+    entzieheSammelschein();
+    meldung('Schießen war nicht ausgemacht – dein Sammelschein ist weg!');
+  }
+
   if (besitzer.zustand === 'bude') {
     besitzer.x = BRUCH.budeX;
     besitzer.y = besitzerStandY();
@@ -4898,6 +6035,128 @@ function werfeHinaus() {
   spieler.vy = -9;
   besitzerSagt('Und lass dich hier nicht wieder blicken!');
   besitzerGehtHeim();
+}
+
+// ===== Sammelschein: mit Silbertalern beim Besitzer gekauft, gilt bis Feierabend =====
+
+const SCHEIN_PREIS = 3;
+let sammelschein = false;
+let scheinHinweisBis = 0;
+
+/// Gehoert ein Stueck aus dem Bruch dem Besitzer? Mit Sammelschein nicht
+function istBruchBeute(tx, ty) {
+  return imBruch(tx, ty) && !sammelschein;
+}
+
+/// Steht Druschi vor der Bude?
+function vorDerBude() {
+  return Math.abs(spieler.x - BRUCH.budeX) < 2.5 && spielerTiefe() <= 0;
+}
+
+/// Taste E an der Bude: Sammelschein kaufen; true, wenn die Taste hier verbraucht wurde
+function kaufeSammelschein() {
+  if (!vorDerBude() || fahrt !== null) return false;
+
+  if (besitzer.zustand === 'jagd' || besitzer.zustand === 'abfuehren') {
+    besitzerSagt('Erst rennst du weg, und jetzt willst du verhandeln?!');
+    return true;
+  }
+  if (nachtWert > 0.5) {
+    meldung('In der Bude schnarcht es. Nachts verkauft der Besitzer keine Sammelscheine – komm morgen wieder.');
+    return true;
+  }
+  if (sammelschein) {
+    besitzerSagt('Du hast doch schon einen Schein. Bis Feierabend!');
+    return true;
+  }
+  if ((inventar[K.taler] || 0) < SCHEIN_PREIS) {
+    besitzerSagt(`Sammelschein? ${SCHEIN_PREIS} Silbertaler – bar auf die Hand!`);
+    meldung(`Ein Sammelschein kostet ${SCHEIN_PREIS} Silbertaler. Taler bekommst du beim Basteln, indem du silberhaltige Erzgang-Stufen einschmilzt.`);
+    return true;
+  }
+
+  inventar[K.taler] -= SCHEIN_PREIS;
+  sammelschein = true;
+  besitzer.verdacht = 0;
+  besitzerSagt('Na gut. Heute darfst du sammeln – aber nicht schießen und nicht an meiner Bude rumhauen!');
+  meldung(`Sammelschein gekauft (${SCHEIN_PREIS} Taler). Bis Feierabend darfst du im Bruch sammeln, Funde und Basalt gehören dir. Dynamit, Hauen an der Bude und Schutt abkippen sind nicht erlaubt.`);
+  aktualisiereLeiste();
+  return true;
+}
+
+/// Schein ungueltig: bei Feierabend oder weil Druschi gegen die Abmachung verstossen hat
+function entzieheSammelschein(grund) {
+  if (!sammelschein) return;
+  sammelschein = false;
+  if (grund) besitzerSagt(grund);
+}
+
+// ===== Einschmelzen (beim Basteln): Erzgang-Stufen zu Talern oder Uranglas statt schluepfen lassen =====
+
+/// Silbertaler je Erz: gediegen Silber, Rotgueltigerz (Proustit), silberhaltiger Bleiglanz; Gold wechselt der Besitzer auch
+const SILBERTALER = { silber: 3, proustit: 2, galenit: 1, gold: 4 };
+
+/// Eine Erzgang-Stufe aus der Tasche einschmelzen
+function schmelzeEin(nummer) {
+  const f = fundstuecke[nummer];
+  if (!f || f.huelle !== 2) return;
+
+  fundstuecke.splice(nummer, 1);
+  const mineral = wesenNach(f.ziel).mineral;
+
+  // Pechblende: Urankonzentrat (Yellowcake) fuer Uranglas oder den Atomakku
+  if (f.ziel === 'uraninit') {
+    inventar[K.uran] = (inventar[K.uran] || 0) + 2;
+    meldung('Im Tiegel: Pechblende! Daraus werden 2× Yellowcake (Urankonzentrat), genug für zwei Atomakkus. Achtung: Es strahlt in der Tasche.');
+  }
+
+  // Silbererze werden zu Talern
+  else if (SILBERTALER[f.ziel]) {
+    const anzahl = SILBERTALER[f.ziel];
+    inventar[K.taler] = (inventar[K.taler] || 0) + anzahl;
+    const herkunft = f.ziel === 'gold' ? 'Gold! Der Besitzer nimmt auch Gold – umgerechnet' : `${mineral}: Silber!`;
+    meldung(`Im Tiegel: ${herkunft} ${anzahl} Silbertaler geprägt. Die Joachimsthaler aus dem Erzgebirge gaben dem Taler den Namen – und über „Daler“ dem Dollar.`);
+  }
+
+  // Alles andere: Schlacke
+  else {
+    meldung(`Im Tiegel: ${mineral} – leider kein Silber, nur Schlacke. Da hätte besser ein Mineraltchi geschlüpft.`);
+  }
+
+  aktualisiereLeiste();
+}
+
+/// Liste der Erzgang-Stufen zum Einschmelzen
+function zeigeHuette() {
+  const ziel = document.getElementById('huette');
+  const stufen = fundstuecke.map((f, n) => [f, n]).filter(([f]) => f.huelle === 2);
+
+  if (!stufen.length) {
+    ziel.innerHTML = '<p class="klein">Keine Erzgang-Stufe dabei.</p>';
+    return;
+  }
+
+  ziel.innerHTML = stufen.map(([f, n], k) => {
+    const tickt = geigerAn && STRAHLER[f.ziel] ? ' · ☢ der Geigerzähler tickt' : '';
+    return `<div class="rezept"><div><b>Erzgang-Stufe ${k + 1}</b><span class="klein">${tickt}</span></div>
+      <button class="knopf" type="button" data-schmelzen="${n}">Einschmelzen</button></div>`;
+  }).join('');
+
+  ziel.querySelectorAll('[data-schmelzen]').forEach(knopf => knopf.addEventListener('click', () => schmelzeEin(Number(knopf.dataset.schmelzen))));
+}
+
+/// Hinweis an der Bude und Feierabend
+function pruefeSammelschein() {
+  if (sammelschein && nachtWert > 0.5) {
+    sammelschein = false;
+    meldung('Feierabend im Bruch – dein Sammelschein gilt nur bei Tag.');
+  }
+
+  const jetzt = performance.now();
+  if (!sammelschein && vorDerBude() && nachtWert <= 0.5 && besitzer.zustand !== 'jagd' && jetzt > scheinHinweisBis) {
+    meldung(`An der Bude: Mit E kaufst du für ${SCHEIN_PREIS} Silbertaler einen Sammelschein für heute.`);
+    scheinHinweisBis = jetzt + 60000;
+  }
 }
 
 /// Besitzer: Bude, Rundgang, Verdacht und Verfolgung
@@ -4982,8 +6241,8 @@ function aktualisiereBesitzer(dt) {
       else besitzer.ziel = rundgangZiel();
     }
 
-    // Verdacht schoepfen
-    if (besitzerSiehtSpieler()) {
+    // Verdacht schoepfen (mit gueltigem Sammelschein darf Druschi hier sein)
+    if (!sammelschein && besitzerSiehtSpieler()) {
       const nah = Math.abs(spieler.x - besitzer.x) < 5;
       besitzer.verdacht += dt * (nah ? 2 : 1.2);
     } else {
@@ -5085,8 +6344,14 @@ function repariereFundament() {
 }
 
 /// Klopfen am Fundament: Der Besitzer hoert es
-function besitzerHoertKlopfen() {
+function besitzerHoertKlopfen(text = 'Wer klopft da an meiner Bude?!') {
   if (besitzer.zustand === 'jagd') return;
+
+  // An der Bude hauen oder Schutt abkippen: dafuer gab es keinen Schein
+  if (sammelschein) {
+    entzieheSammelschein();
+    meldung('Das war nicht abgemacht – der Besitzer zerreißt deinen Sammelschein.');
+  }
 
   if (besitzer.zustand === 'bude') {
     besitzer.zustand = 'rundgang';
@@ -5097,7 +6362,7 @@ function besitzerHoertKlopfen() {
     besitzer.ziel = rundgangZiel();
   }
   besitzer.verdacht = Math.max(besitzer.verdacht, 0.6);
-  besitzerSagt('Wer klopft da an meiner Bude?!');
+  besitzerSagt(text);
 }
 
 /// Funde aus dem Bruch sind in Sicherheit, sobald Druschi das Gelaende verlassen hat
@@ -5144,6 +6409,9 @@ function steckeFundZurueck(f, wx, wy) {
     if (!KACHELARTEN[t].fest || t === K.grundfels || t === K.fund || y >= HOEHE - 2) continue;
     welt[idx(x, y)] = K.fund;
     fundHuelle[idx(x, y)] = f.huelle;
+
+    // Der Inhalt bleibt derselbe – auch fuer Geigerzaehler und UV
+    if (f.ziel) fundZiel.set(idx(x, y), f.ziel);
     return true;
   }
   return false;
@@ -5181,6 +6449,70 @@ function befahrerSchluepft(ebene, x) {
   return true;
 }
 
+/// Steigbereich im Gesenk zwischen Stollensohle und 1. Sohle
+const GESENK_OBEN = ALT.stollenOben;
+const GESENK_UNTEN = ALT.sohle1.oben + 1;
+
+/// Spalte im Gesenk, in der durchgehend eine Fahrt oder ein Seil haengt (oder null)
+function gesenkSteigspalte() {
+  for (const x of [ALT.gesenkX, ALT.gesenkX + 1]) {
+    let durchgehend = true;
+    for (let y = GESENK_OBEN + 1; y <= GESENK_UNTEN; y++) if (!istKletterbar(kachel(x, y))) durchgehend = false;
+    if (durchgehend) return x;
+  }
+  return null;
+}
+
+/// Eigenes Geraet einbauen: von oben haengt er sein Seil ein, von unten stellt er seine Fahrt auf
+function befahrerBautEin() {
+  const x = ALT.gesenkX;
+  const art = befahrer.ebene === 0 ? K.seil : K.leiter;
+  const kacheln = [];
+
+  for (let y = GESENK_OBEN; y <= GESENK_UNTEN; y++) {
+    const t = kachel(x, y);
+    if (t !== K.luft && !istKletterbar(t)) return null;
+    if (t === K.luft) kacheln.push(idx(x, y));
+  }
+
+  kacheln.forEach(i => { welt[i] = art; });
+  befahrer.geraet = { art, kacheln };
+  befahrerSagt(art === K.seil ? 'Seil einhängen … und abseilen.' : 'Fahrt aufstellen … und rauf.');
+  return x;
+}
+
+/// Beim Verschwinden nimmt er sein Geraet wieder mit (soweit es noch da ist)
+function befahrerPacktEin() {
+  const g = befahrer.geraet;
+  if (g) g.kacheln.forEach(i => { if (welt[i] === g.art) welt[i] = K.luft; });
+  befahrer.geraet = null;
+}
+
+/// Ueber das Gesenk auf die andere Sohle: vorhandenes Steiggeraet nutzen oder eigenes einbauen
+function befahrerSteigtUm() {
+  let spalte = gesenkSteigspalte();
+
+  if (spalte === null) {
+
+    // Sein Geraet ist weg: geklaut!
+    if (befahrer.geraet) {
+      befahrerSagt(befahrer.geraet.art === K.seil ? 'Wer hat mein Seil geklaut?! Na warte …' : 'Wer hat meine Fahrt geklaut?! Na warte …');
+      befahrer.verdacht = 0.7;
+      befahrer.bestohlen = true;
+      return false;
+    }
+
+    spalte = befahrerBautEin();
+    if (spalte === null) return false;
+  }
+
+  befahrer.zustand = 'steigen';
+  befahrer.steigX = spalte;
+  befahrer.steigEbene = 1 - befahrer.ebene;
+  befahrer.pause = 1.2;
+  return true;
+}
+
 /// Sieht der Schwarzbefahrer Druschi? Nur unter Tage im Altbergbau
 function befahrerSiehtSpieler() {
   if (befahrer.zustand === 'weg' || !imAltbergbau(spieler.x, spieler.y - 0.5)) return false;
@@ -5205,12 +6537,13 @@ function befahrerErwischt() {
   fundstuecke = fundstuecke.filter(f => !f.ausAlt);
   funde.forEach(f => steckeFundZurueck(f, befahrer.x, befahrer.y - 1));
 
-  // Seile im Altbergbau abnehmen (erst zaehlen, dann entfernen)
+  // Seile im Altbergbau abnehmen (erst zaehlen, dann entfernen); sein eigenes bleibt haengen
   let seile = 0;
   const seilKacheln = [];
+  const eigenes = new Set(befahrer.geraet ? befahrer.geraet.kacheln : []);
   for (let x = ALT.links; x <= ALT.wetter.x1 + 1; x++) {
     for (let y = 0; y <= ALT.wetter.y1 + 2; y++) {
-      if (kachel(x, y) !== K.seil) continue;
+      if (kachel(x, y) !== K.seil || eigenes.has(idx(x, y))) continue;
       if (kachel(x, y - 1) !== K.seil) seile++;
       seilKacheln.push(idx(x, y));
     }
@@ -5244,19 +6577,51 @@ function aktualisiereBefahrer(dt) {
       befahrer.zustand = 'unterwegs';
       befahrer.aufenthalt = 60 + Math.random() * 40;
       befahrer.verdacht = 0;
+      befahrer.wechsel = false;
+      befahrer.bestohlen = false;
     }
+    return;
+  }
+
+  // Im Gesenk: erst Geraet einbauen, dann am Seil oder auf der Fahrt hinauf oder hinunter
+  if (befahrer.zustand === 'steigen') {
+    befahrer.laeuft = false;
+    befahrer.vy = 0;
+    if (befahrer.pause > 0) { befahrer.pause -= dt; return; }
+
+    const ziel = befahrerEbene(befahrer.steigEbene);
+    befahrer.x = befahrer.steigX + 0.5;
+
+    // Seil oder Fahrt unter ihm weggehauen: er stuerzt und macht sich davon
+    if (!istKletterbar(kachel(befahrer.steigX, Math.floor(befahrer.y - 0.5)))) {
+      befahrerSagt(befahrer.geraet && befahrer.geraet.art === K.leiter ? 'Aaah – meine Fahrt! Das gibt Ärger …' : 'Aaah – mein Seil! Das gibt Ärger …');
+      befahrer.zustand = 'raus';
+      befahrer.weg = 1.5;
+      return;
+    }
+
+    const dy = ziel.boden - befahrer.y;
+    if (Math.abs(dy) > 0.05) {
+      befahrer.y += Math.sign(dy) * Math.min(Math.abs(dy), 2.6 * dt);
+      return;
+    }
+
+    // Oben oder unten angekommen: auf die Sohle treten
+    Object.assign(befahrer, { x: ALT.gesenkX - 0.5, y: ziel.boden, ebene: befahrer.steigEbene, zustand: 'unterwegs', pause: 1, fest: 0 });
+    befahrer.ziel = befahrerZiel(befahrer.ebene);
     return;
   }
 
   let richtung = 0, tempo = 2, hoch = false;
 
-  // Verschwindet wieder durch den Schlupf
+  // Verschwindet wieder durch den Schlupf und nimmt sein Geraet mit
   if (befahrer.zustand === 'raus') {
     befahrer.weg -= dt;
     richtung = spieler.x > befahrer.x ? -1 : 1;
     if (befahrer.weg <= 0) {
       befahrer.zustand = 'weg';
       befahrer.uhr = 90 + Math.random() * 90;
+      befahrerPacktEin();
       return;
     }
   }
@@ -5292,11 +6657,21 @@ function aktualisiereBefahrer(dt) {
       richtung = Math.sign(befahrer.ziel - befahrer.x);
     } else {
 
-      // Am Ziel: umsehen, manchmal ueber das Gesenk auf die andere Sohle wechseln
-      befahrer.pause = 1.5 + Math.random() * 2;
+      // Am Gesenk angekommen: auf die andere Sohle steigen
       befahrer.fest = 0;
-      if (Math.random() < 0.3) befahrerSchluepft(1 - befahrer.ebene, ALT.gesenkX - 1);
-      befahrer.ziel = befahrerZiel(befahrer.ebene);
+      if (befahrer.wechsel) {
+        befahrer.wechsel = false;
+        if (befahrerSteigtUm()) return;
+      }
+
+      // Am Ziel: umsehen, manchmal zum Gesenk gehen und die Sohle wechseln
+      befahrer.pause = 1.5 + Math.random() * 2;
+      if (Math.random() < 0.3 && !befahrer.bestohlen) {
+        befahrer.wechsel = true;
+        befahrer.ziel = ALT.gesenkX - 0.5;
+      } else {
+        befahrer.ziel = befahrerZiel(befahrer.ebene);
+      }
     }
 
     // Verdacht schoepfen
@@ -5315,7 +6690,273 @@ function aktualisiereBefahrer(dt) {
   befahrer.fest = richtung && Math.abs(befahrer.x - vorherX) < 0.002 ? befahrer.fest + dt : 0;
 
   // Tief gefallen: weg ist er
-  if (befahrer.y > ALT.wetter.y1 + 3) befahrer.zustand = 'weg';
+  if (befahrer.y > ALT.wetter.y1 + 3) {
+    befahrer.zustand = 'weg';
+    befahrerPacktEin();
+  }
+}
+
+// ===== Haldensammler: kommt tagsueber, klaubt auf Halden und steckt Liegengelassenes ein =====
+
+const sammler = { x: 0, y: 0, vy: 0, amBoden: false, blick: 1, laeuft: false, zustand: 'weg', uhr: 90, ziel: 0, zielArt: null, zielId: null, pause: 0, fest: 0, aufenthalt: 0, beute: [], klaubUhr: 0, geklaubt: 0 };
+let sammlerRede = { text: '', bis: 0 };
+
+/// Der Haldensammler sagt etwas
+function sammlerSagt(text) {
+  sammlerRede = { text, bis: performance.now() + 4000 };
+}
+
+/// Hier kommt er ueber den Feldweg und geht auch wieder (rechts vom Teich, damit er nicht durchs Wasser muss)
+const SAMMLER_WEG_X = 19.5;
+
+/// Darf er hier hin? Ueber Tage zwischen Teich und Steinbruch (in die Grube des Besitzers traut er sich nicht)
+function sammlerDarfHin(x) {
+  return x > SAMMLER_WEG_X - 0.5 && x < BRUCH.links - 3;
+}
+
+/// Was liegt ueber Tage herum? Fundstuecke und Mineraltchi, die nicht auf einem Staender praesentiert sind
+function herrenloseStuecke() {
+  return entitaeten.filter(e => {
+    if (e.getragenVon || e.stufe) return false;
+    if (Math.floor(e.y) - oberflaeche[begrenze(Math.floor(e.x), 0, BREITE - 1)] > 1) return false;
+    if (!sammlerDarfHin(e.x)) return false;
+    return e.art === 'fund' || !stehtAufStaender(e);
+  });
+}
+
+/// Ist das ein Haldenfund, der offen oben auf der Halde liegt?
+function offenerHaldenfund(x, y) {
+  return kachel(x, y) === K.fund && hinter[idx(x, y)] === K.halde && !istFest(x, y - 1) && !istKletterbar(kachel(x, y - 1));
+}
+
+/// Oberste Haldenkachel ueber Tage, an der er klauben kann (oder null); offen liegende Funde zuerst
+function haldeZumKlauben() {
+  const stellen = [], funde = [];
+  for (let x = 3; x < BREITE - 3; x++) {
+    if (!sammlerDarfHin(x)) continue;
+    for (let y = OBERFLAECHE - 8; y <= OBERFLAECHE + 2; y++) {
+      if (offenerHaldenfund(x, y)) { funde.push([x, y]); break; }
+      if (kachel(x, y) === K.halde && !istFest(x, y - 1) && !istKletterbar(kachel(x, y - 1))) { stellen.push([x, y]); break; }
+    }
+  }
+  const liste = funde.length ? funde : stellen;
+  return liste.length ? liste[Math.floor(Math.random() * liste.length)] : null;
+}
+
+/// Neues Ziel: zuerst Liegengelassenes, sonst eine Halde, sonst bummeln
+function sammlerWaehltZiel() {
+  const stuecke = herrenloseStuecke();
+  if (stuecke.length) {
+    const e = stuecke.reduce((a, b) => Math.abs(a.x - sammler.x) < Math.abs(b.x - sammler.x) ? a : b);
+    Object.assign(sammler, { ziel: e.x, zielArt: 'stueck', zielId: e.id });
+    return;
+  }
+
+  const halde = haldeZumKlauben();
+  if (halde) {
+    Object.assign(sammler, { ziel: halde[0] + 0.5, zielArt: 'halde', zielId: halde, geklaubt: 0, klaubUhr: 2.5 });
+    return;
+  }
+  Object.assign(sammler, { ziel: SAMMLER_WEG_X + 1 + Math.random() * (BRUCH.links - SAMMLER_WEG_X - 5), zielArt: null, zielId: null });
+}
+
+/// Er geht wieder (zum naechsten Rand); mit Beute ist die fuer immer weg
+function sammlerGeht() {
+  sammler.zustand = 'geht';
+  sammler.ziel = SAMMLER_WEG_X;
+}
+
+/// Haldensammler: taucht tagsueber am Rand auf, sucht und klaubt, haut bei Ertappen ab
+function aktualisiereSammler(dt) {
+  const tag = nachtWert < 0.4;
+
+  // Nicht da: tagsueber ab und zu
+  if (sammler.zustand === 'weg') {
+    sammler.uhr -= dt;
+    if (sammler.uhr > 0 || !tag) return;
+    const x = SAMMLER_WEG_X;
+    Object.assign(sammler, { x, y: oberflaeche[Math.floor(x)], vy: 0, zustand: 'sucht', aufenthalt: 70 + Math.random() * 40, beute: [], pause: 1, fest: 0 });
+    sammlerWaehltZiel();
+    sammlerSagt('Mal sehen, was die Halden heute hergeben …');
+    return;
+  }
+
+  let richtung = 0;
+  const spielerNah = Math.abs(spieler.x - sammler.x) < 6 && Math.abs(spieler.y - sammler.y) < 4;
+
+  // Ertappt mit Beute: alles fallen lassen und weg
+  if (sammler.beute.length && Math.abs(spieler.x - sammler.x) < 1 && Math.abs(spieler.y - sammler.y) < 1.5) {
+    sammler.beute.forEach((e, k) => {
+      e.x = sammler.x + (k % 2 ? 0.6 : -0.6);
+      e.y = sammler.y - 0.2;
+      e.vy = 0;
+      entitaeten.push(e);
+    });
+    meldung(`Erwischt! Der Haldensammler lässt ${sammler.beute.length === 1 ? 'das Stück' : 'die ' + sammler.beute.length + ' Stücke'} fallen und macht sich davon.`);
+    sammler.beute = [];
+    sammlerSagt('Schon gut, schon gut – war doch nur ausgeliehen!');
+    sammlerGeht();
+  }
+
+  if (sammler.zustand === 'geht') {
+    richtung = Math.sign(sammler.ziel - sammler.x);
+    if (Math.abs(sammler.ziel - sammler.x) < 0.5 || sammler.fest > 4) {
+      if (sammler.beute.length) meldung(`Der Haldensammler ist mit ${sammler.beute.length === 1 ? 'einem deiner Stücke' : sammler.beute.length + ' deiner Stücke'} auf und davon. Lass nichts ungeschützt herumliegen!`);
+      sammler.zustand = 'weg';
+      sammler.uhr = 150 + Math.random() * 150;
+      sammler.beute = [];
+      return;
+    }
+  } else {
+    sammler.aufenthalt -= dt;
+    if (sammler.aufenthalt <= 0 || !tag || sammler.beute.length >= 2) {
+      sammlerGeht();
+    } else if (sammler.pause > 0) {
+      sammler.pause -= dt;
+    } else if (Math.abs(sammler.ziel - sammler.x) > 0.4 && sammler.fest < 3) {
+      richtung = Math.sign(sammler.ziel - sammler.x);
+    } else {
+      sammler.fest = 0;
+
+      // Am Ziel: einstecken, klauben oder weiterziehen
+      if (sammler.zielArt === 'stueck') {
+        const e = entitaeten.find(x => x.id === sammler.zielId);
+        if (e && Math.abs(e.x - sammler.x) < 1.2 && herrenloseStuecke().includes(e)) {
+          if (spielerNah) {
+            sammlerSagt('Oh – gehört das dir? Na gut, ich lass es liegen.');
+            sammler.pause = 2;
+          } else {
+            entitaeten = entitaeten.filter(x => x !== e);
+            if (gewaehlt === e.id) gewaehlt = null;
+            sammler.beute.push(e);
+            sammlerSagt(e.art === 'fund' ? 'Ein herrenloser Fund! Den nehm ich mit.' : 'So ein schönes Stück, einfach liegen gelassen …');
+            sammler.pause = 1.5;
+          }
+        }
+        sammlerWaehltZiel();
+      } else if (sammler.zielArt === 'halde') {
+        const [hx, hy] = sammler.zielId;
+        sammler.klaubUhr -= dt;
+        sammler.laeuft = false;
+
+        if (sammler.klaubUhr <= 0) {
+          sammler.klaubUhr = 2.5;
+
+          // Offen liegender Haldenfund: den steckt er ein (es sei denn, Druschi steht daneben)
+          if (offenerHaldenfund(hx, hy)) {
+            if (spielerNah) {
+              sammlerSagt('Den hast du sicher schon gesehen – ich lass dir den Vortritt.');
+            } else {
+              const i = idx(hx, hy);
+              welt[i] = K.halde;
+              fundHuelle[i] = -1;
+              fundZiel.delete(i);
+              sammlerSagt('Ha, ein Haldenfund, ganz offen obenauf!');
+              meldung('Der Haldensammler hat einen Fund von der Halde eingesteckt. Wer zuerst kommt, klaubt zuerst …');
+            }
+            sammler.geklaubt = 2;
+          } else if (kachel(hx, hy) === K.halde) {
+
+            // Umgraben: das Material wirft er nur zur Seite, die Halde schrumpft nicht
+            welt[idx(hx, hy)] = K.luft;
+            const seite = hx - sammler.blick;
+            const wohin = bodenAb(seite, hy - 1);
+            if (wohin !== null) welt[idx(seite, wohin)] = K.halde;
+            else welt[idx(hx, hy)] = K.halde;
+
+            for (let k = 0; k < 6; k++) partikel.push({ x: hx + 0.5, y: hy + 0.5, vx: (Math.random() - 0.5) * 4, vy: -Math.random() * 4, leben: 0.5, farbe: '#aaa49a' });
+            sammler.geklaubt++;
+          }
+          if (sammler.geklaubt >= 2 || kachel(hx, hy) !== K.halde) {
+            if (Math.random() < 0.4) sammlerSagt(['Wieder nur taubes Zeug.', 'Hier hat schon einer gesucht …', 'Ah, ein Krümel Erz!'][Math.floor(Math.random() * 3)]);
+            sammler.pause = 1;
+            sammlerWaehltZiel();
+          }
+        }
+      } else {
+        sammler.pause = 1.5 + Math.random() * 2;
+        sammlerWaehltZiel();
+      }
+    }
+  }
+
+  const vorher = sammler.x;
+  bewegeFigur(sammler, dt, richtung, 2.2, false);
+  sammler.fest = richtung && Math.abs(sammler.x - vorher) < 0.002 ? sammler.fest + dt : 0;
+}
+
+/// Haldensammler zeichnen: ein Granit-Tama (rosa Feldspat, grauer Quarz, schwarzer Glimmer) mit Fischerhut, Rucksack und Geologenhammer
+function maleSammler(c, jetzt) {
+  if (sammler.zustand === 'weg') return;
+  const px = sammler.x * KACHEL, py = sammler.y * KACHEL;
+  const schritt = sammler.laeuft && !ruhig.matches ? Math.sin(jetzt / 110) * 3 : 0;
+  const klaubt = sammler.zielArt === 'halde' && !sammler.laeuft && sammler.zustand === 'sucht' && sammler.pause <= 0;
+
+  c.save();
+  c.translate(px, py);
+  c.scale(sammler.blick, 1);
+  c.lineWidth = 2;
+  c.strokeStyle = '#1e1e24';
+
+  gesteinsFuesse(c, schritt, '#4a3a2a');
+
+  // Rucksack, mit Beute praller
+  rundesRechteck(c, -22, -42, 11 + Math.min(4, sammler.beute.length * 2), 24, 3);
+  c.fillStyle = '#6a7a3a';
+  c.fill();
+  c.stroke();
+
+  // Koerper: Granitbrocken, gesprenkelt
+  rundesRechteck(c, -14, -54, 28, 48, 9);
+  c.fillStyle = '#e2c4b8';
+  c.fill();
+  c.save();
+  c.clip();
+  [[-9, -46, '#c88a7a'], [4, -40, '#9a9aa2'], [-4, -30, '#2a2a30'], [8, -22, '#c88a7a'], [-10, -18, '#9a9aa2'], [2, -12, '#2a2a30'], [9, -48, '#2a2a30'], [-6, -40, '#9a9aa2']].forEach(([x, y, farbe]) => {
+    c.fillStyle = farbe;
+    c.fillRect(x, y, farbe === '#2a2a30' ? 2.5 : 4, farbe === '#2a2a30' ? 2.5 : 3);
+  });
+  c.restore();
+  rundesRechteck(c, -14, -54, 28, 48, 9);
+  c.stroke();
+
+  // Fischerhut
+  c.beginPath();
+  c.moveTo(-17, -52);
+  c.lineTo(17, -52);
+  c.lineTo(11, -62);
+  c.lineTo(-11, -62);
+  c.closePath();
+  c.fillStyle = '#b8a06a';
+  c.fill();
+  c.stroke();
+
+  // Auge, schmunzelnd
+  gesteinsAuge(c, 6, -42, false);
+
+  // Arm mit Geologenhammer; beim Klauben schwingt er
+  const winkel = klaubt ? Math.sin(jetzt / 90) * 0.8 : -0.3;
+  c.save();
+  c.translate(10, -28);
+  c.rotate(winkel);
+  c.strokeStyle = '#e2c4b8';
+  c.lineWidth = 6;
+  c.beginPath();
+  c.moveTo(0, 0);
+  c.lineTo(8, 8);
+  c.stroke();
+  c.fillStyle = '#7a5a3a';
+  c.fillRect(7, 0, 3, 16);
+  c.fillStyle = '#6a6e78';
+  c.fillRect(3, -2, 12, 4);
+  c.restore();
+  c.restore();
+}
+
+/// Sprechblase ueber dem Haldensammler
+function maleSammlerZeichen(c, jetzt) {
+  if (sammler.zustand === 'weg' || sammlerRede.bis < jetzt) return;
+  maleSprechblase(c, sammler.x * KACHEL, (sammler.y - BESITZER_H) * KACHEL - 30, sammlerRede.text, '#6a7a3a');
 }
 
 /// Schwarzbefahrer zeichnen: dunkle Kleidung, Rucksack, Halstuch, Helm mit Stirnlampe
@@ -5342,58 +6983,114 @@ function maleBefahrer(c, jetzt, lichter) {
   c.lineWidth = 2;
   c.strokeStyle = '#1e1e24';
 
-  // Beine, Stiefel, Rucksack
-  c.fillStyle = '#2a2a34';
-  c.fillRect(-9, -16 + schritt, 7, 16 - schritt);
-  c.fillRect(2, -16 - schritt, 7, 16 + schritt);
-  c.fillStyle = '#1e1e24';
-  c.fillRect(-10, -4, 9, 4);
-  c.fillRect(1, -4, 10, 4);
-  rundesRechteck(c, -20, -40, 10, 20, 3);
+  // Stummelfuesse und Rucksack hinten
+  gesteinsFuesse(c, schritt, '#2a2a30');
+  rundesRechteck(c, -22, -40, 10, 22, 3);
   c.fillStyle = '#5a4a3a';
   c.fill();
   c.stroke();
 
-  // Kapuzenpulli
-  rundesRechteck(c, -13, -40, 26, 26, 10);
+  // Koerper: ein linsenfoermiger Gneisbrocken, grau-weiss gebaendert, mit rosa Feldspat-Augen
+  c.beginPath();
+  c.moveTo(-14, -6);
+  c.bezierCurveTo(-19, -26, -15, -52, 0, -56);
+  c.bezierCurveTo(15, -54, 19, -28, 14, -6);
+  c.closePath();
+  c.save();
+  c.clip();
+  c.fillStyle = '#8e8c90';
+  c.fillRect(-20, -60, 40, 56);
+  [[-48, '#dcd8d2'], [-38, '#56545c'], [-29, '#e6e2dc'], [-20, '#6a6870'], [-12, '#d2cec6']].forEach(([y, farbe], k) => {
+    c.beginPath();
+    c.moveTo(-20, y);
+    c.bezierCurveTo(-8, y - 4 + k % 2 * 3, 6, y + 5, 20, y - 2);
+    c.lineTo(20, y + 4);
+    c.bezierCurveTo(6, y + 9, -8, y + 1, -20, y + 5);
+    c.closePath();
+    c.fillStyle = farbe;
+    c.fill();
+  });
+  [[-8, -33], [9, -24], [-3, -16]].forEach(([x, y]) => {
+    oval(c, x, y, 3.4, 2);
+    c.fillStyle = '#e8a8a0';
+    c.fill();
+  });
+  c.restore();
+  c.stroke();
+
+  // Kapuze ueber dem Oberteil, Stirnlampe vorn
+  c.beginPath();
+  c.moveTo(-15, -36);
+  c.bezierCurveTo(-16, -54, -6, -60, 2, -60);
+  c.bezierCurveTo(12, -60, 17, -50, 15, -44);
+  c.lineTo(10, -48);
+  c.bezierCurveTo(6, -54, -6, -54, -9, -42);
+  c.closePath();
   c.fillStyle = '#3e4a3a';
   c.fill();
   c.stroke();
-  c.strokeStyle = '#3e4a3a';
+  c.fillStyle = '#2a2a30';
+  c.fillRect(8, -54, 6, 3);
+  c.fillStyle = '#fffbe0';
+  c.fillRect(13, -56, 4, 5);
+
+  // Gesicht: schmale Augen, rotes Halstuch
+  gesteinsAuge(c, 6, -42, boese);
+  c.beginPath();
+  c.moveTo(-12, -27);
+  c.quadraticCurveTo(2, -22, 15, -28);
+  c.lineTo(14, -23);
+  c.quadraticCurveTo(2, -17, -12, -22);
+  c.closePath();
+  c.fillStyle = '#9a2e2e';
+  c.fill();
+
+  // Arm: drohend erhoben oder locker
+  gesteinsArm(c, boese, '#3e4a3a', '#8e8c90');
+  c.restore();
+}
+
+/// Kurze Stummelfuesse unter einem Gesteins-Tama
+function gesteinsFuesse(c, schritt, farbe) {
+  c.fillStyle = farbe;
+  rundesRechteck(c, -10, -8 + schritt * 0.6, 8, 8 - schritt * 0.6, 3);
+  c.fill();
+  rundesRechteck(c, 2, -8 - schritt * 0.6, 8, 8 + schritt * 0.6, 3);
+  c.fill();
+}
+
+/// Auge auf dem Gestein (Blick nach vorn), wuetend mit schraeger Braue
+function gesteinsAuge(c, x, y, boese) {
+  oval(c, x, y, 3.4, 3.8);
+  c.fillStyle = '#ffffff';
+  c.fill();
+  oval(c, x + 1, y + 0.5, 1.8, 2.2);
+  c.fillStyle = '#1e1e24';
+  c.fill();
+
+  c.beginPath();
+  c.moveTo(x - 4, boese ? y - 7 : y - 6);
+  c.lineTo(x + 4, boese ? y - 4 : y - 6);
+  c.lineWidth = 2.4;
+  c.strokeStyle = '#1e1e24';
+  c.stroke();
+  c.lineWidth = 2;
+}
+
+/// Kurzer Arm im Aermel, mit Faust aus Gestein
+function gesteinsArm(c, hoch, aermel, faust) {
+  c.strokeStyle = aermel;
   c.lineWidth = 6;
   c.beginPath();
-  c.moveTo(8, -34);
-  c.lineTo(boese ? 17 : 14, boese ? -44 : -24);
+  c.moveTo(9, -30);
+  c.lineTo(hoch ? 18 : 16, hoch ? -46 : -20);
   c.stroke();
   c.lineWidth = 2;
   c.strokeStyle = '#1e1e24';
-
-  // Kopf mit Halstuch und Helm samt Stirnlampe
-  oval(c, 2, -50, 10.5, 10.5);
-  c.fillStyle = '#f2c49a';
+  oval(c, hoch ? 19 : 17, hoch ? -48 : -18, 4.5, 4.5);
+  c.fillStyle = faust;
   c.fill();
   c.stroke();
-  oval(c, 5, -45, 8, 4);
-  c.fillStyle = '#7a2a2a';
-  c.fill();
-  oval(c, 7, -52, 1.8, 2.2);
-  c.fillStyle = '#1e1e24';
-  c.fill();
-  if (boese) {
-    c.beginPath();
-    c.moveTo(3, -58);
-    c.lineTo(11, -55);
-    c.stroke();
-  }
-  c.beginPath();
-  c.ellipse(2, -56, 12, 9, 0, Math.PI, 0);
-  c.closePath();
-  c.fillStyle = '#2a2a30';
-  c.fill();
-  c.stroke();
-  c.fillStyle = '#fffbe0';
-  c.fillRect(10, -60, 5, 5);
-  c.restore();
 }
 
 /// Sprechblase und Zeichen ueber dem Schwarzbefahrer
@@ -5459,6 +7156,13 @@ function lasseVerbruchFallen(dt, jetzt) {
 
   for (let y = HOEHE - 3; y >= 0; y--) {
     for (let x = 0; x < BREITE; x++) {
+
+      // Haldenschutt rutscht und rollt, bis die Boeschung steht
+      if (welt[idx(x, y)] === K.halde) {
+        bewegeHaldenschutt(x, y);
+        continue;
+      }
+
       if (welt[idx(x, y)] !== K.verbruch) continue;
       const unten = welt[idx(x, y + 1)];
       const a = KACHELARTEN[unten];
@@ -5670,10 +7374,353 @@ function lasseFallen(e, dt) {
 function schluepfe(e) {
   const w = wesenNach(e.ziel);
   const h = HUELLEN[e.huelle];
-  Object.assign(e, { art: 'tchi', wesen: e.ziel, variante: 0, satt: 80, glanz: 80, laune: 80, not: 0, umgewandelt: false, naechsterSchritt: 0 });
+  const kruste = krusteNachHuelle(e.huelle);
+  Object.assign(e, { art: 'tchi', wesen: e.ziel, variante: 0, satt: 80, glanz: kruste ? KRUSTEN_GLANZ : 80, laune: 80, not: 0, umgewandelt: false, naechsterSchritt: 0, kruste });
   geschluepft.add(w.id);
-  meldung(`Aus ${h.name} wurde ${w.name} (${w.mineral})! ${fundortText(w, w.varianten[0])}`);
+  const krustenText = kruste ? ` Frisch geborgen steckt es noch in einer ${KRUSTEN[kruste].name} – vorsichtig reinigen!` : '';
+  meldung(`Aus ${h.name} wurde ${w.name} (${w.mineral})! ${fundortText(w, w.varianten[0])}${krustenText}`);
   zeigeAlbum();
+}
+
+// ===== Sammlung: das schoenste Stueck jeder Art, fuer immer in der Vitrine =====
+
+const SAMMLUNG_SPEICHER = 'mineraltchi-sammlung';
+
+/// Sammlung lesen: { wesenId: { variante, huelle, datum } }
+function liesSammlung() {
+  try { return JSON.parse(localStorage.getItem(SAMMLUNG_SPEICHER) || '{}'); } catch (e) { return {}; }
+}
+
+/// Sammlung sichern
+function schreibeSammlung(sammlung) {
+  try { localStorage.setItem(SAMMLUNG_SPEICHER, JSON.stringify(sammlung)); } catch (e) { /* Speicher nicht verfuegbar */ }
+}
+
+/// Steht das Mineraltchi auf einem Staender?
+function stehtAufStaender(e) {
+  const unten = kachel(Math.floor(e.x), Math.floor(e.y + 0.01));
+  return unten === K.staender || unten === K.uranglas;
+}
+
+/// Pflegezustand pruefen (ohne Aufstellung); Liste dessen, was fehlt
+function pflegeFehlt(e, name) {
+  const fehlt = [];
+  const wer = name ? name + ': ' : '';
+  if (e.kruste) fehlt.push(wer + 'reinigen');
+  if (e.angeaetzt) fehlt.push(wer + 'ist angeätzt – so kommt es nicht in die Vitrine');
+  if (e.umgewandelt) fehlt.push(wer + 'hat Pflegefehler erlitten');
+  if (e.satt < 90) fehlt.push(wer + 'satter (Lösung)');
+  if (e.glanz < 95) fehlt.push(wer + 'mehr Glanz');
+  if (e.laune < 90) fehlt.push(wer + 'bessere Laune');
+  return fehlt;
+}
+
+/// Was fehlt noch zum perfekten Zustand? Leere Liste = sammlungsreif
+function fehltZurSammlung(e) {
+  const fehlt = pflegeFehlt(e);
+  if (e.getragenVon || e.stufe) fehlt.push('allein stehen');
+  if (!stehtAufStaender(e)) fehlt.push('auf einen Ständer stellen');
+  return fehlt;
+}
+
+// ----- Stufen: zusammengewachsene Paragenesen -----
+
+const STUFEN_SPEICHER = 'mineraltchi-sammlung-stufen';
+
+/// Gesammelte Stufen lesen: { paarSchluessel: { lage, wirt: {wesen, variante}, gast: {wesen, variante}, datum } }
+function liesStufen() {
+  try { return JSON.parse(localStorage.getItem(STUFEN_SPEICHER) || '{}'); } catch (e) { return {}; }
+}
+
+/// Gesammelte Stufen sichern
+function schreibeStufen(stufen) {
+  try { localStorage.setItem(STUFEN_SPEICHER, JSON.stringify(stufen)); } catch (e) { /* Speicher nicht verfuegbar */ }
+}
+
+/// Die beiden Partner einer Stufe: der Wirt unten, der Gast obendrauf, darin oder daneben
+function stufenPaar(e) {
+  const partner = entitaeten.find(x => x.id === e.stufe);
+  if (!partner) return null;
+  const wirt = e.getragenVon === partner.id ? partner : partner.getragenVon === e.id ? e : (e.x <= partner.x ? e : partner);
+  return { wirt, gast: wirt === e ? partner : e, lage: e.lage || 'neben' };
+}
+
+/// Was fehlt der Stufe noch? Beide perfekt gepflegt, der Wirt auf einem Staender
+function fehltZurStufe(e) {
+  const paar = stufenPaar(e);
+  if (!paar) return ['Partner fehlt'];
+  const fehlt = pflegeFehlt(paar.wirt, wesenNach(paar.wirt.wesen).name).concat(pflegeFehlt(paar.gast, wesenNach(paar.gast.wesen).name));
+  const aufStaender = stehtAufStaender(paar.wirt) || (paar.lage === 'neben' && stehtAufStaender(paar.gast));
+  if (!aufStaender) fehlt.push('die Stufe auf einen Ständer stellen');
+  return fehlt;
+}
+
+/// Perfekte Stufe in die Vitrine legen; beide Partner verlassen die Welt
+function legeStufeInSammlung(e) {
+  const paar = stufenPaar(e);
+  if (!paar || fehltZurStufe(e).length) return;
+
+  const schluessel = paarSchluessel(paar.wirt.wesen, paar.gast.wesen);
+  const stufen = liesStufen();
+  const neu = { lage: paar.lage, wirt: { wesen: paar.wirt.wesen, variante: paar.wirt.variante }, gast: { wesen: paar.gast.wesen, variante: paar.gast.variante }, datum: new Date().toLocaleDateString('de-DE') };
+  const alt = stufen[schluessel];
+  if (alt && JSON.stringify([alt.wirt, alt.gast]) === JSON.stringify([neu.wirt, neu.gast])) {
+    meldung('Genau diese Stufe liegt schon in deiner Vitrine.');
+    return;
+  }
+  if (alt && !confirm('Diese Paragenese liegt schon als Stufe in der Vitrine. Gegen diese hier austauschen?')) return;
+
+  stufen[schluessel] = neu;
+  schreibeStufen(stufen);
+  entitaeten = entitaeten.filter(x => x !== paar.wirt && x !== paar.gast);
+  gewaehlt = null;
+  meldung(`Die Stufe ${stufenName(neu)} kommt in die Vitrine. (${Object.keys(stufen).length} von ${PARAGENESEN.length} Paragenesen)`);
+  zeigePflege(false);
+  zeigeSammlung();
+}
+
+/// Etikett einer Stufe, z. B. „Pyrit auf Quarz“
+function stufenName(s) {
+  const a = wesenNach(s.gast.wesen), b = wesenNach(s.wirt.wesen);
+  const verbindung = s.lage === 'auf' ? ' auf ' : s.lage === 'in' ? ' in ' : ' mit ';
+  return a.mineral.replace(/ \(.*\)/, '') + verbindung + b.mineral.replace(/ \(.*\)/, '');
+}
+
+/// Stufe im 0..100-Massstab zeichnen: Sockel, Wirt und Gast
+function maleStufe(c, s) {
+  const wirt = wesenNach(s.wirt.wesen), gast = wesenNach(s.gast.wesen);
+  const vw = wirt.varianten[s.wirt.variante] || wirt.varianten[0];
+  const vg = gast.varianten[s.gast.variante] || gast.varianten[0];
+  const figur = (w, v, x, y, skala) => {
+    c.save();
+    c.translate(x, y);
+    c.scale(skala, skala);
+    w.male(c, v.farben, { puschel: true, form: v.form });
+    c.restore();
+  };
+
+  // Gesteinssockel
+  oval(c, 50, 92, 40, 7);
+  c.fillStyle = '#9a8c78';
+  c.fill();
+
+  if (s.lage === 'neben') {
+    figur(wirt, vw, -2, 30, 0.62);
+    figur(gast, vg, 38, 30, 0.62);
+  } else if (s.lage === 'auf') {
+    figur(wirt, vw, 8, 16, 0.78);
+    figur(gast, vg, 46, 2, 0.45);
+  } else {
+    figur(wirt, vw, 8, 14, 0.82);
+    c.globalAlpha = 0.85;
+    figur(gast, vg, 34, 40, 0.32);
+    c.globalAlpha = 1;
+  }
+}
+
+/// Perfektes Mineraltchi in die Vitrine legen; es verlaesst die Welt und bleibt so, wie es ist
+function legeInSammlung(e) {
+  const w = wesenNach(e.wesen);
+  if (fehltZurSammlung(e).length) return;
+
+  const sammlung = liesSammlung();
+  const vorhanden = sammlung[e.wesen];
+  if (vorhanden && vorhanden.variante === e.variante) {
+    meldung(`${w.name} (${w.varianten[e.variante].name}) liegt schon genau so in deiner Sammlung.`);
+    return;
+  }
+  if (vorhanden && !confirm(`In der Vitrine liegt schon ${w.name} als ${w.varianten[vorhanden.variante].name}. Gegen dieses Stück (${w.varianten[e.variante].name}) austauschen?`)) return;
+
+  sammlung[e.wesen] = { variante: e.variante, huelle: e.huelle, datum: new Date().toLocaleDateString('de-DE') };
+  schreibeSammlung(sammlung);
+
+  entitaeten = entitaeten.filter(x => x !== e);
+  gewaehlt = null;
+  meldung(`${w.name} kommt in die Vitrine – perfekt gepflegt und präsentiert. Dort bleibt es für immer so schön. (${Object.keys(sammlung).length} von ${WESEN.length} Arten)`);
+  zeigePflege(false);
+  zeigeSammlung();
+}
+
+/// Vitrine unter der Leiste aufbauen: ein Fach je Art, gesammelte Stuecke mit Etikett
+function zeigeSammlung() {
+  const sammlung = liesSammlung();
+  const anzahl = Object.keys(sammlung).length;
+  document.getElementById('sammlungZaehler').textContent = `${anzahl} von ${WESEN.length} Arten`;
+  const regal = document.getElementById('sammlungRegal');
+  regal.innerHTML = '';
+
+  WESEN.forEach(w => {
+    const stueck = sammlung[w.id];
+    const fach = document.createElement('div');
+    fach.className = 'fach' + (stueck ? '' : ' leer');
+
+    if (!stueck) {
+      fach.innerHTML = '<div class="platz">?</div><div class="etikett">&nbsp;</div>';
+      fach.title = 'Noch nicht in der Sammlung';
+      regal.appendChild(fach);
+      return;
+    }
+
+    const v = w.varianten[stueck.variante] || w.varianten[0];
+    const bild = document.createElement('canvas');
+    bereiteCanvas(bild, 64);
+    const c = bild.getContext('2d');
+    c.setTransform(bild.width / 100, 0, 0, bild.width / 100, 0, 0);
+    w.male(c, v.farben, { puschel: true, form: v.form });
+
+    const etikett = document.createElement('div');
+    etikett.className = 'etikett';
+    etikett.textContent = w.varianten.length > 1 ? `${v.mineral || w.mineral} · ${v.name}` : (v.mineral || w.mineral);
+
+    const herkunft = HUELLEN[stueck.huelle] ? HUELLEN[stueck.huelle].name : 'Grubenwelt';
+    fach.title = `${w.name} – ${v.mineral || w.mineral}${w.varianten.length > 1 ? ', ' + v.name : ''}\n${v.formel || w.formel} · ${v.system || w.system} · Mohs ${v.mohs || w.mohs}\nFund: Grubenwelt, ${herkunft} · gesammelt am ${stueck.datum}`;
+    fach.append(bild, etikett);
+    regal.appendChild(fach);
+  });
+
+  // Zweites Regal: Stufen (Paragenesen)
+  const stufen = liesStufen();
+  document.getElementById('stufenZaehler').textContent = `(${Object.keys(stufen).length} von ${PARAGENESEN.length})`;
+  const stufenRegal = document.getElementById('stufenRegal');
+  stufenRegal.innerHTML = '';
+
+  PARAGENESEN.forEach(p => {
+    const s = stufen[paarSchluessel(p.ids[0], p.ids[1])];
+    const fach = document.createElement('div');
+    fach.className = 'fach' + (s ? '' : ' leer');
+
+    if (!s) {
+      fach.innerHTML = '<div class="platz">?</div><div class="etikett">&nbsp;</div>';
+      fach.title = 'Diese Stufe fehlt noch';
+      stufenRegal.appendChild(fach);
+      return;
+    }
+
+    const bild = document.createElement('canvas');
+    bereiteCanvas(bild, 64);
+    const c = bild.getContext('2d');
+    c.setTransform(bild.width / 100, 0, 0, bild.width / 100, 0, 0);
+    maleStufe(c, s);
+
+    const etikett = document.createElement('div');
+    etikett.className = 'etikett';
+    etikett.textContent = stufenName(s);
+    fach.title = `${stufenName(s)}\n${p.text}\ngesammelt am ${s.datum}`;
+    fach.append(bild, etikett);
+    stufenRegal.appendChild(fach);
+  });
+}
+
+document.getElementById('knopfSammlung').addEventListener('click', () => {
+  const e = gewaehltesWesen();
+  if (!e || e.art !== 'tchi') return;
+  if (e.stufe && stufenPaar(e)) legeStufeInSammlung(e);
+  else legeInSammlung(e);
+});
+
+// ===== Reinigen: frisch geborgene Stufen von Kruste befreien =====
+
+/// Krusten und was dagegen hilft
+const KRUSTEN = {
+  rost: { name: 'Rostkruste aus Limonit', mittel: ['oxalsaeure', 'saeure'], farben: ['#b8642a', '#8a4416', '#d08a4a'] },
+  kalk: { name: 'Kalkkruste', mittel: ['saeure'], farben: ['#f2ecd8', '#d8ceb0', '#ffffff'] },
+  lehm: { name: 'Lehmschicht', mittel: ['wasser'], farben: ['#a8845a', '#8a6a44', '#c4a47a'] }
+};
+
+/// Hoechster Glanz, solange noch Kruste dran ist (Abstauben hilft dagegen nicht)
+const KRUSTEN_GLANZ = 45;
+
+/// Hoechster Glanz einer angeaetzten Stufe
+const ANGEAETZT_GLANZ = 70;
+
+/// Reinigungsmittel
+const MITTEL = {
+  wasser: { name: 'Wasser und Bürste' },
+  oxalsaeure: { name: 'Oxalsäure' },
+  saeure: { name: 'verdünnte Salzsäure' }
+};
+
+/// Gruppen, die ein Mittel nicht vertragen
+const KARBONATE = ['calcit', 'dolomit', 'aragonit', 'rhodochrosit', 'smithsonit', 'azurit'];
+const ZEOLITHE = ['stilbit', 'laumontit', 'okenit', 'cavansit', 'apophyllit'];
+const BLEI_UND_PHOSPHATE = ['wulfenit', 'vanadinit', 'pyromorphit', 'krokoit', 'autunit', 'torbernit', 'uranocircit', 'cuprosklodowskit', 'vivianit', 'erythrin', 'wavellit', 'apatit'];
+const SULFIDE = ['sphalerit', 'galenit'];
+
+/// Welche Kruste bringt ein frisch geschluepftes Mineraltchi aus seinem Gestein mit?
+function krusteNachHuelle(huelle) {
+  if (huelle === 0) return 'kalk';
+  if (huelle === 2 || huelle === 3) return 'rost';
+  if (huelle === 7) return null;
+  return 'lehm';
+}
+
+/// Schadet das Mittel diesem Mineral? Dann eine Beschreibung, sonst null
+function reinigungsSchaden(id, mittel) {
+  if (mittel === 'wasser') return id === 'halit' ? 'Halit ist Steinsalz – im Wasser löst es sich einfach auf! Die Kanten sind rund und angelöst.' : null;
+
+  if (KARBONATE.includes(id)) return 'Es schäumt! Karbonate lösen sich in Säure unter Kohlendioxid auf – die Kristallspitzen sind angefressen.';
+  if (BLEI_UND_PHOSPHATE.includes(id)) return 'Die Oberfläche wird matt und angeätzt – Blei-, Phosphat- und Arsenatminerale vertragen keine Säure.';
+  if (id === 'halit') return 'Halit löst sich schon im Wasser der Säure auf – die Kanten sind angelöst.';
+
+  if (mittel === 'saeure') {
+    if (ZEOLITHE.includes(id)) return 'Der Zeolith wird trüb und gallertig – Salzsäure zersetzt sein Kristallgerüst.';
+    if (id === 'hemimorphit') return 'Hemimorphit löst sich in Salzsäure – die Oberfläche ist angeätzt.';
+    if (SULFIDE.includes(id)) return 'Puh, das stinkt nach faulen Eiern (Schwefelwasserstoff)! Die Säure greift das Sulfid an.';
+  }
+  return null;
+}
+
+/// Mit einem Mittel reinigen: passt es, ist die Kruste ab; vertraegt das Mineral es nicht, ist es angeaetzt
+function reinige(e, mittel) {
+  const w = wesenNach(e.wesen);
+  const kruste = e.kruste ? KRUSTEN[e.kruste] : null;
+  const schaden = reinigungsSchaden(e.wesen, mittel);
+  const wirkt = kruste && kruste.mittel.includes(mittel);
+  e.wachBis = performance.now() + 8000;
+
+  // Beschaedigt: dauerhaft weniger Glanz
+  if (schaden) {
+    e.angeaetzt = true;
+    e.glanz = Math.min(e.glanz, 20);
+    e.laune = Math.max(0, e.laune - 40);
+    if (wirkt) e.kruste = null;
+    const mittelName = MITTEL[mittel].name.charAt(0).toUpperCase() + MITTEL[mittel].name.slice(1);
+    return `${mittelName} war keine gute Idee: ${schaden} ${w.name} bleibt angeätzt und wird nie wieder ganz so glänzen.`;
+  }
+
+  if (!kruste) return `${w.name} ist schon sauber – da gibt es nichts zu reinigen. Für Staub reicht der Pinsel.`;
+
+  if (!wirkt) {
+
+    // Wuerde jedes passende Mittel schaden, laesst ein kluger Sammler die Kruste dran
+    if (kruste.mittel.every(m => reinigungsSchaden(e.wesen, m))) {
+      return `${MITTEL[mittel].name.charAt(0).toUpperCase() + MITTEL[mittel].name.slice(1)} hilft gegen die ${kruste.name} nicht – und jedes Mittel, das sie löst, würde ${w.name} anätzen. Echte Sammler lassen die Kruste bei so einer Stufe lieber dran.`;
+    }
+
+    const tipp = e.kruste === 'lehm' ? 'Lehm weicht man in Wasser auf.' : e.kruste === 'kalk' ? 'Kalk löst sich in verdünnter Säure.' : 'Rost (Limonit) löst Oxalsäure am schonendsten.';
+    return `${MITTEL[mittel].name.charAt(0).toUpperCase() + MITTEL[mittel].name.slice(1)} hilft gegen die ${kruste.name} nicht. ${tipp}`;
+  }
+
+  // Geschafft
+  e.kruste = null;
+  e.glanz = e.angeaetzt ? ANGEAETZT_GLANZ : 100;
+  e.laune = Math.min(100, e.laune + 20);
+  e.funkenBis = performance.now() + 1500;
+  return `Die ${kruste.name} ist ab – ${w.name} strahlt zum ersten Mal richtig! So sieht es also wirklich aus.`;
+}
+
+/// Kruste auf einem Mineraltchi zeichnen (im 0..100-Massstab der Figur)
+function maleKruste(c, e) {
+  const k = KRUSTEN[e.kruste];
+  if (!k) return;
+
+  [[34, 72, 9, 6], [62, 60, 8, 5], [44, 46, 6, 4], [70, 80, 7, 4], [30, 56, 5, 4], [56, 84, 8, 4]].forEach(([x, y, rx, ry], n) => {
+    oval(c, x, y, rx, ry);
+    c.fillStyle = k.farben[n % 3];
+    c.globalAlpha = 0.8;
+    c.fill();
+  });
+  c.globalAlpha = 1;
 }
 
 /// Mineraltchi nach zu langer Vernachlaessigung umwandeln
@@ -5706,7 +7753,7 @@ function aktualisiereWesen(e, dt, jetzt, nacht) {
   }
 
   const unten = kachel(Math.floor(e.x), Math.floor(e.y + 0.01));
-  const aufStaender = unten === K.staender;
+  const aufStaender = unten === K.staender || unten === K.uranglas;
   const eingeschlossen = e.getragenVon && e.lage === 'in';
   e.schlaeft = nacht > 0.55 && !(e.wachBis > jetzt);
 
@@ -5888,6 +7935,7 @@ function maleTchi(c, e, cx, unten, skala) {
   c.translate(cx - 50 * s, unten - 92 * s);
   c.scale(s, s);
   w.male(c, v.farben, { blinzeln: e.schlaeft || (takt + e.id) % 11 === 0, puschel: true, form: v.form });
+  if (e.kruste) maleKruste(c, e);
   c.restore();
 }
 
@@ -6132,7 +8180,7 @@ function maleBude(c, lichter) {
   c.restore();
 }
 
-/// Der Steinbruchbesitzer: Schutzhelm, Warnweste, Schnauzbart
+/// Der Steinbruchbesitzer: ein Basalt-Tama (Saeule aus dem eigenen Bruch) mit Schutzhelm, Warnweste, Schnauzbart
 function maleBesitzer(c, jetzt, lichter) {
   if (besitzer.zustand === 'bude') return;
   const px = besitzer.x * KACHEL, py = besitzer.y * KACHEL;
@@ -6158,70 +8206,55 @@ function maleBesitzer(c, jetzt, lichter) {
   c.lineWidth = 2;
   c.strokeStyle = '#3a2a1e';
 
-  // Beine und Stiefel
-  c.fillStyle = '#3a4a6a';
-  c.fillRect(-9, -16 + schritt, 7, 16 - schritt);
-  c.fillRect(2, -16 - schritt, 7, 16 + schritt);
-  c.fillStyle = '#3a2a1e';
-  c.fillRect(-10, -4, 9, 4);
-  c.fillRect(1, -4, 10, 4);
+  // Stummelfuesse
+  gesteinsFuesse(c, schritt, '#2c2c32');
+
+  // Koerper: eine sechseckige Basaltsaeule aus dem eigenen Bruch, dunkel und feinkoernig
+  flaeche(c, [[-14, -6], [-14, -56], [-4, -58], [-4, -6]], '#4e4e56');
+  flaeche(c, [[-4, -6], [-4, -58], [10, -58], [10, -6]], '#3c3c44');
+  flaeche(c, [[10, -6], [10, -58], [15, -55], [15, -8]], '#2e2e34');
+  flaeche(c, [[-14, -56], [-4, -60], [10, -60], [15, -55], [10, -58], [-4, -58]], '#6a6a72');
+
+  // Koernung: helle Feldspatleisten und gruene Olivinkoerner, quer die Saeulenklueftung
+  [[-10, -48], [-7, -34], [2, -50], [6, -14], [-11, -20], [12, -36], [0, -28]].forEach(([x, y], k) => {
+    c.fillStyle = k % 3 === 0 ? '#7a9a4a' : '#9a9aa2';
+    c.fillRect(x, y, k % 3 === 0 ? 2.5 : 3.5, k % 3 === 0 ? 2.5 : 1.2);
+  });
+  linie(c, [[-14, -20], [-4, -21], [10, -19], [15, -20]], 'rgba(20, 20, 26, 0.6)', 1);
+  umriss(c, [[-14, -6], [-14, -56], [-4, -60], [10, -60], [15, -55], [15, -8], [10, -6]], '#1e1e24', 2);
+  linie(c, [[-4, -58], [-4, -6]], 'rgba(20, 20, 26, 0.5)', 1);
+  linie(c, [[10, -58], [10, -6]], 'rgba(20, 20, 26, 0.5)', 1);
 
   // Warnweste mit Reflexstreifen
-  rundesRechteck(c, -14, -40, 28, 26, 10);
-  c.fillStyle = '#ff8a1e';
-  c.fill();
-  c.stroke();
+  flaeche(c, [[-14, -34], [15, -34], [15, -14], [-14, -14]], '#ff8a1e');
+  umriss(c, [[-14, -34], [15, -34], [15, -14], [-14, -14]], '#7a3a0a', 1.5);
   c.fillStyle = '#f4f4f0';
-  c.fillRect(-13, -31, 26, 3);
-  c.fillRect(-13, -24, 26, 3);
+  c.fillRect(-14, -28, 29, 3);
+  c.fillRect(-14, -21, 29, 3);
+
+  // Gesicht: Auge mit Braue und buschiger Schnauzbart
+  gesteinsAuge(c, 6, -46, wuetend);
+  oval(c, 9, -38, 6, 2.6);
+  c.fillStyle = '#d8d4cc';
+  c.fill();
 
   // Arm: wuetend mit erhobener Faust, nachts mit Handlampe
-  c.strokeStyle = '#ff8a1e';
-  c.lineWidth = 6;
-  c.beginPath();
-  c.moveTo(8, -34);
-  if (wuetend) c.lineTo(16, -50);
-  else c.lineTo(15, -26);
-  c.stroke();
-  c.lineWidth = 2;
-  c.strokeStyle = '#3a2a1e';
-  oval(c, wuetend ? 17 : 16, wuetend ? -52 : -24, 4.5, 4.5);
-  c.fillStyle = '#f6c9a0';
-  c.fill();
-  c.stroke();
+  gesteinsArm(c, wuetend, '#ff8a1e', '#4e4e56');
   if (nacht && !wuetend) {
     c.fillStyle = '#4a4650';
-    c.fillRect(17, -27, 10, 6);
+    c.fillRect(18, -21, 10, 6);
     c.fillStyle = '#fffbe0';
-    c.fillRect(26, -27, 3, 6);
+    c.fillRect(27, -21, 3, 6);
   }
 
-  // Kopf, Schnauzbart, Augenbraue
-  oval(c, 2, -50, 11, 11);
-  c.fillStyle = '#f6c9a0';
-  c.fill();
-  c.stroke();
-  oval(c, 9, -45, 5.5, 2.4);
-  c.fillStyle = '#6a4a2a';
-  c.fill();
-  oval(c, 7, -51, 1.8, 2.2);
-  c.fillStyle = '#2c2a30';
-  c.fill();
+  // Weisser Schutzhelm obenauf
   c.beginPath();
-  c.moveTo(3, wuetend ? -58 : -56);
-  c.lineTo(11, wuetend ? -54 : -56);
-  c.lineWidth = 2.5;
-  c.stroke();
-
-  // Weisser Schutzhelm
-  c.lineWidth = 2;
-  c.beginPath();
-  c.ellipse(2, -56, 12, 9, 0, Math.PI, 0);
+  c.ellipse(1, -60, 13, 8, 0, Math.PI, 0);
   c.closePath();
   c.fillStyle = '#f4f4f0';
   c.fill();
   c.stroke();
-  oval(c, 3, -56, 15, 2.5);
+  oval(c, 2, -60, 16, 2.5);
   c.fill();
   c.stroke();
   c.restore();
@@ -6438,6 +8471,7 @@ function zeichneWelt(jetzt) {
         if (matt) { oval(wctx, px + 27, py + 9, 4, 5); wctx.fillStyle = 'rgba(90, 140, 255, 0.85)'; wctx.fill(); }
       }
       if (t === K.fund && (takt + tx + ty) % 4 === 0) stern(wctx, px + 24, py + 8, 4, '#ffffff');
+      if (t === K.lampenstube) lichter.push([px + 10, py + 20, 1.4]);
 
       // Gleis laeuft durch den Tuerstock
       if (t === K.zimmerung && istGleis(tx, ty)) wctx.drawImage(texturen[K.gleis][0], px, py, KACHEL, KACHEL);
@@ -6452,6 +8486,9 @@ function zeichneWelt(jetzt) {
       }
     }
   }
+
+  // Kippende Baeume
+  maleFallendeBaeume(wctx);
 
   // Bude und Warnschild am Steinbruch, Mundloch am Hang
   maleBude(wctx, lichter);
@@ -6489,17 +8526,24 @@ function zeichneWelt(jetzt) {
   // Steinbruchbesitzer und Schwarzbefahrer
   maleBesitzer(wctx, jetzt, lichter);
   maleBefahrer(wctx, jetzt, lichter);
+  maleSammler(wctx, jetzt);
 
   // Geleucht am Helm: unter Tage und nachts an, mit L abschaltbar
   const lampeAn = geleuchtAn();
   maleSpieler(wctx, lampeAn);
+  if (geigerAn && fahrt === null) maleGeiger(wctx, jetzt);
+  if (fahrt === null) maleSolarpanel(wctx);
 
   // Hunte vor Druschi, damit er im Hunt sitzt
-  hunte.forEach(h => maleHuntForm(wctx, h.x * KACHEL, (h.ty + GLEIS_OBEN) * KACHEL, 1, h.alt));
+  hunte.forEach(h => {
+    maleHuntForm(wctx, h.x * KACHEL, (h.ty + GLEIS_OBEN) * KACHEL, 1, h.alt);
+    if (h.ladung > 0) maleHuntLadung(wctx, h);
+  });
 
   if (lampeAn) {
-    lichter.push([spieler.x * KACHEL, (spieler.y - 0.8) * KACHEL, 5]);
-    lichter.push([(spieler.x + spieler.blick * 2.4) * KACHEL, (spieler.y - 1.2) * KACHEL, 4]);
+    const staerke = akkuHelligkeit();
+    lichter.push([spieler.x * KACHEL, (spieler.y - 0.8) * KACHEL, 5 * staerke]);
+    lichter.push([(spieler.x + spieler.blick * 2.4) * KACHEL, (spieler.y - 1.2) * KACHEL, 4 * staerke]);
   } else {
     lichter.push([spieler.x * KACHEL, (spieler.y - 0.8) * KACHEL, geleuchtAus ? 1.6 : 2.5]);
   }
@@ -6523,6 +8567,9 @@ function zeichneWelt(jetzt) {
   // Ueber der Dunkelheit: Wuensche, Funken, Auswahl, Risse
   wctx.save();
   wctx.translate(-kx, -ky);
+
+  // UV-Lampe: was fluoresziert, leuchtet gerade im Dunkeln
+  if (uvAn) maleUvLeuchten(wctx, x0, x1, y0, y1, jetzt);
 
   entitaeten.forEach(e => {
     if (e.art !== 'tchi') return;
@@ -6569,6 +8616,7 @@ function zeichneWelt(jetzt) {
   // Sprechblase oder Zeichen fuer Verdacht und Verfolgung ueber dem Kopf des Besitzers
   maleBesitzerRede(wctx, jetzt);
   maleBefahrerZeichen(wctx, jetzt);
+  maleSammlerZeichen(wctx, jetzt);
   if (besitzer.zustand !== 'bude' && besitzerRede.bis < jetzt) {
     const zeichen = besitzer.zustand === 'jagd' ? '!' : besitzer.verdacht > 0.05 ? '?' : '';
 
@@ -6695,8 +8743,14 @@ function aktualisiereLeiste() {
     waehleEintrag(roh === 'fund' || roh === 'tasche' ? roh : Number(roh));
   }));
 
-  document.getElementById('vorrat').textContent = `Lösung: ${loesung}`;
+  // Rucksack: wie viel Gestein Druschi noch tragen kann
+  const imRucksack = abraumImVorrat();
+  const rucksack = imRucksack >= TRAGEGRENZE ? `Rucksack voll (${imRucksack}/${TRAGEGRENZE}) – abkippen (K) oder verbauen` : `Rucksack: ${imRucksack}/${TRAGEGRENZE} Gestein`;
+  const taler = (inventar[K.taler] > 0 ? ` · Silbertaler: ${inventar[K.taler]}` : '') + (inventar[K.akku] > 0 ? ` · Ersatzakkus: ${inventar[K.akku]}` : '') +
+    (inventar[K.uran] > 0 ? ` · Yellowcake: ${inventar[K.uran]}` : '') + (inventar[K.atomakku] > 0 ? ` · Atomakku: ${inventar[K.atomakku]} (Rest ${Math.round((atomRest || ATOM_LADUNG) / ATOM_LADUNG * 100)} %)` : '');
+  document.getElementById('vorrat').textContent = `Lösung: ${loesung}${taler} · ${rucksack}`;
   zeigeRezepte();
+  zeigeHuette();
 }
 
 /// Leisteneintrag waehlen und zum Bauen wechseln
@@ -6780,7 +8834,26 @@ function zeigePflege(mitSteckbrief) {
   }
   const l = lageVon(e);
   teile.push('Umgebung: ' + bedingungsName(bedingungAn(l.x, l.y - 0.5)));
+  if (e.kruste) teile.push('frisch geborgen, noch mit ' + KRUSTEN[e.kruste].name);
+  if (e.angeaetzt) teile.push('angeätzt');
   status.textContent = teile.join(' · ');
+
+  // Reinigen gibt es nur, solange Kruste dran ist
+  const reinigenKnopf = document.getElementById('knopfReinigen');
+  reinigenKnopf.hidden = !e.kruste;
+  if (!e.kruste) document.getElementById('reinigenWahl').hidden = true;
+
+  // Sammlungsreif? Sonst sagen, was noch fehlt (Stufen als Ganzes)
+  const paar = e.stufe ? stufenPaar(e) : null;
+  const alsStufe = !!paar;
+  const fehlt = alsStufe ? fehltZurStufe(e) : fehltZurSammlung(e);
+  const vorhanden = alsStufe ? liesStufen()[paarSchluessel(paar.wirt.wesen, paar.gast.wesen)] : liesSammlung()[e.wesen];
+  const sammelKnopf = document.getElementById('knopfSammlung');
+  sammelKnopf.hidden = fehlt.length > 0;
+  sammelKnopf.textContent = alsStufe ? 'Stufe in die Sammlung' : 'In die Sammlung';
+  document.getElementById('sammlungHinweis').textContent = fehlt.length
+    ? `${alsStufe ? 'Für die Stufe' : 'Für die Sammlung'} fehlt noch: ${fehlt.join(', ')}.${vorhanden ? ' (Liegt schon einmal in der Vitrine.)' : ''}`
+    : `Perfekt! ${alsStufe ? 'Die Stufe' : w.name} ist bereit für die Vitrine.`;
 
   // Balken
   [['balkenSatt', e.satt], ['balkenGlanz', e.glanz], ['balkenLaune', e.laune]].forEach(([id, wert]) => {
@@ -6831,6 +8904,7 @@ function zeichnePflegeBild() {
     c.save();
     if (e.funkenBis > performance.now() && !ruhig.matches) c.translate(0, takt % 2 ? -3 : 0);
     w.male(c, v.farben, { blinzeln: e.schlaeft || takt % 10 === 0, puschel: true, form: v.form });
+    if (e.kruste) maleKruste(c, e);
     c.restore();
   });
 }
@@ -6868,11 +8942,30 @@ document.getElementById('knopfFuettern').addEventListener('click', () => {
 document.getElementById('knopfAbstauben').addEventListener('click', () => {
   const e = gewaehltesWesen();
   if (!e || e.art !== 'tchi') return;
-  e.glanz = 100;
   e.wachBis = performance.now() + 8000;
-  document.getElementById('pflegeText').textContent = `Vorsichtig mit dem weichen Pinsel – ${wesenNach(e.wesen).name} glänzt wieder.`;
+
+  // Gegen Kruste hilft der Pinsel nicht, eine angeaetzte Stufe glaenzt nie mehr ganz
+  const hoechstens = e.kruste ? KRUSTEN_GLANZ : e.angeaetzt ? ANGEAETZT_GLANZ : 100;
+  e.glanz = Math.max(e.glanz, hoechstens);
+  document.getElementById('pflegeText').textContent = e.kruste
+    ? `Der Staub ist weg, aber die ${KRUSTEN[e.kruste].name} sitzt fest – die muss mit dem richtigen Mittel herunter (Reinigen).`
+    : `Vorsichtig mit dem weichen Pinsel – ${wesenNach(e.wesen).name} glänzt wieder.`;
   zeigePflege(false);
 });
+
+// Reinigen: erst das Mittel waehlen
+document.getElementById('knopfReinigen').addEventListener('click', () => {
+  const wahl = document.getElementById('reinigenWahl');
+  wahl.hidden = !wahl.hidden;
+});
+
+document.querySelectorAll('#reinigenWahl [data-mittel]').forEach(knopf => knopf.addEventListener('click', () => {
+  const e = gewaehltesWesen();
+  if (!e || e.art !== 'tchi') return;
+  document.getElementById('pflegeText').textContent = reinige(e, knopf.dataset.mittel);
+  document.getElementById('reinigenWahl').hidden = true;
+  zeigePflege(false);
+}));
 
 document.getElementById('knopfSpielen').addEventListener('click', () => {
   const e = gewaehltesWesen();
@@ -6919,7 +9012,10 @@ document.addEventListener('keydown', ev => {
   if (ev.code === 'KeyG') setzeModus('graben');
   if (ev.code === 'KeyB') setzeModus('bauen');
   if (ev.code === 'KeyL') schalteGeleucht();
-  if (ev.code === 'KeyE') schalteHunt();
+  if (ev.code === 'KeyE' && !ev.repeat && !kaufeSammelschein()) schalteHunt();
+  if (ev.code === 'KeyU' && !ev.repeat) schalteUv();
+  if (ev.code === 'KeyK' && !ev.repeat) kippeAbraum();
+  if ((ev.key || '').toLowerCase() === 'z' && !ev.repeat) schalteGeiger();
 
   if (/^Digit[1-9]$/.test(ev.code)) {
     const knoepfe = document.querySelectorAll('#hotbar [data-eintrag]');
@@ -6962,6 +9058,16 @@ weltCanvas.addEventListener('pointerdown', ev => {
 
   // Hunt: Linksklick steigt ein oder aus, Rechtsklick laedt ihn auf
   const hunt = trefferHunt(maus.wx, maus.wy);
+
+  // Mit Gleis in der Hand legt ein Klick auf einen stehenden Hunt das Gleis unter ihn
+  const gleisUnterHunt = hunt && ev.button === 0 && ausgewaehlt === K.gleis && fahrt !== hunt.id;
+  if (gleisUnterHunt) {
+    maus.wx = hunt.x;
+    maus.wy = hunt.ty + 0.5;
+    setze();
+    return;
+  }
+
   if (hunt) {
     if (ev.button === 2) nimmHunt(hunt);
     else if (fahrt === hunt.id) steigeAus();
@@ -7000,6 +9106,8 @@ document.querySelectorAll('[data-taste]').forEach(knopf => {
 
 document.getElementById('modusGraben').addEventListener('click', () => setzeModus('graben'));
 document.getElementById('geleuchtKnopf').addEventListener('click', schalteGeleucht);
+document.getElementById('uvKnopf').addEventListener('click', schalteUv);
+document.getElementById('kippKnopf').addEventListener('click', kippeAbraum);
 
 /// Geleucht am Helm an- oder ausschalten
 function schalteGeleucht() {
@@ -7055,6 +9163,7 @@ if (!lade()) {
 setzeModus(ausgewaehlt === 'fund' ? 'bauen' : 'graben');
 aktualisiereLeiste();
 zeigeAlbum();
+zeigeSammlung();
 
 unterTage = spielerTiefe() > 2;
 let letzteZeit = performance.now();
@@ -7082,8 +9191,13 @@ function schleife(jetzt) {
   aktualisiereLadungen(dt, jetzt);
   aktualisiereBesitzer(dt);
   aktualisiereBefahrer(dt);
+  aktualisiereSammler(dt);
   lasseVerbruchFallen(dt, jetzt);
   aktualisiereLuft(dt);
+  aktualisiereStrahlung(dt, jetzt);
+  rieselSchutt(dt);
+  aktualisiereAkku(dt);
+  aktualisiereBaeume(dt);
 
   // Einfahren und Ausfahren melden
   const jetztUnterTage = spielerTiefe() > 2;
@@ -7106,6 +9220,8 @@ function schleife(jetzt) {
     pruefeAltBeute();
     pruefeBergschaden(jetzt);
     pruefeWetter();
+    aktualisiereGrubenwasser();
+    pruefeSammelschein();
   }
 
   // Pflegebereich und Anzeige oben links
@@ -7117,10 +9233,10 @@ function schleife(jetzt) {
     const tiefe = Math.floor(spieler.y) - oberflaeche[begrenze(Math.floor(spieler.x), 0, BREITE - 1)];
     const gestein = KACHELARTEN[hinter[idx(begrenze(Math.floor(spieler.x), 0, BREITE - 1), begrenze(Math.floor(spieler.y - 0.5), 0, HOEHE - 1))]] || KACHELARTEN[0];
     const imSteinbruch = !spielerAusserGelaende() && spieler.x >= BRUCH.links - 2;
-    const bruchText = imSteinbruch ? ` · Steinbruch${besitzer.zustand === 'jagd' ? ' – du wirst verfolgt!' : besitzer.zustand === 'bude' ? (nacht > 0.5 ? ' – der Besitzer schläft' : ' – der Besitzer ist in der Bude') : ' – der Besitzer macht seine Runde'}${istWachsam() ? ' · er ist besonders wachsam' : ''}` : '';
+    const bruchText = imSteinbruch ? ` · Steinbruch${besitzer.zustand === 'jagd' ? ' – du wirst verfolgt!' : besitzer.zustand === 'bude' ? (nacht > 0.5 ? ' – der Besitzer schläft' : ' – der Besitzer ist in der Bude') : ' – der Besitzer macht seine Runde'}${istWachsam() ? ' · er ist besonders wachsam' : ''}${sammelschein ? ' · Sammelschein gültig' : ''}` : '';
     const imAlten = imWetterBereich(spieler.x, spieler.y - SPIELER_H / 2);
     const wetterText = imAlten ? (wetterFrisch ? ' · Alter Abbau: frische Wetter' : ` · Alter Abbau: matte Wetter, Luft ${Math.round(luft)} %`) : '';
-    document.getElementById('hud').textContent = `${tiefe > 0 ? 'Tiefe ' + tiefe + ' m' : 'Oberfläche'} · ${tiefe > 0 ? gestein.name : (nacht > 0.5 ? 'Nacht' : 'Tag')} · Bedingung: ${bedingungsName(bedingungAn(spieler.x, spieler.y - 0.5))}${bruchText}${wetterText}`;
+    document.getElementById('hud').textContent = `${tiefe > 0 ? 'Tiefe ' + tiefe + ' m' : 'Oberfläche'} · ${tiefe > 0 ? gestein.name : (nacht > 0.5 ? 'Nacht' : 'Tag')} · Bedingung: ${bedingungsName(bedingungAn(spieler.x, spieler.y - 0.5))}${bruchText}${wetterText}${strahlungsText()}${tiefe > 1 || nacht > 0.5 || akku < 100 ? ` · Akku ${Math.round(akku)} %${inLampenstube() && akku < 100 ? ' (lädt)' : solarLaedt() ? ' (Solar)' : inventar[K.atomakku] > 0 && akku < 100 ? ' (Atom)' : ''}` : ''}`;
   }
 
   // Regelmaessig sichern

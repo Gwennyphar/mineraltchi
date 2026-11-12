@@ -1516,7 +1516,8 @@ const WESEN = [
       { name: 'Lila', farben: { hell: '#f0e4ff', a: '#c8a4f0', b: '#9a6ad6', c: '#6a3eaa', o: '#2a1450' }, notiz: 'Lila: die klassische Fluoritfarbe.' },
       { name: 'Grün', farben: { hell: '#e8fbe8', a: '#a8e8b0', b: '#5ec472', c: '#2e8a46', o: '#123a1e' }, notiz: 'Grün: ebenfalls sehr häufig.' },
       { name: 'Zoniert', farben: { hell: '#f0e4ff', a: '#c8a4f0', b: '#9a6ad6', c: '#6a3eaa', o: '#2a1450', kern: '#9ee8a8' }, notiz: 'Zoniert: außen lila, innen grün – jede Zone ist eine Wachstumsphase.' },
-      { name: 'Gelb', farben: { hell: '#fff8d8', a: '#fbe48a', b: '#eec440', c: '#b8901a', o: '#4e3a08' }, notiz: 'Gelb: warm und honigfarben.' }
+      { name: 'Gelb', farben: { hell: '#fff8d8', a: '#fbe48a', b: '#eec440', c: '#b8901a', o: '#4e3a08' }, notiz: 'Gelb: warm und honigfarben.' },
+      { name: 'Antozonit', farben: { hell: '#8a6aa8', a: '#4e2e70', b: '#33204e', c: '#1e1230', o: '#000000', dunkel: true, wange: 'rgba(255, 140, 160, 0.35)' }, notiz: 'Antozonit („Stinkspat“): Die Strahlung von Uranerz hat ihn fast schwarzviolett gefärbt. Zerschlagen riecht er stechend nach Fluor – berühmt aus Wölsendorf in der Oberpfalz.' }
     ],
     male: (ctx, f, o) => {
       fuesse(ctx, 34, 58, 90, f);
@@ -2256,6 +2257,44 @@ const WESEN = [
     fehler: 'Zu warm gelagert, und er wird trüb und matt.'
   },
   {
+    id: 'laumontit', name: 'Laumontitchi', mineral: 'Laumontit', formel: 'CaAl₂Si₄O₁₂ · 4H₂O', system: 'monoklin', mohs: '3–4',
+    schale: ['#fbe2d8', '#d0765a'],
+    varianten: [
+      { name: 'Ziegelrot', farben: { hell: '#ffe2d6', a: '#f2a58a', b: '#d0765a', c: '#a04e36', o: '#4a1e12' }, notiz: 'Ziegelrot: so steckt er im Syenit des Plauenschen Grundes als Kluftfüllung.' },
+      { name: 'Weiß', farben: { hell: '#ffffff', a: '#f6f2ec', b: '#e2dacc', c: '#bcb0a0', o: '#544a3e' }, notiz: 'Weiß: frisch und glasglänzend, mit vollem Kristallwasser.' },
+      { name: 'Leonhardit', farben: { hell: '#fbf8f2', a: '#ece6dc', b: '#d6cebf', c: '#b0a694', o: '#6a6052', kreide: true }, notiz: 'Leonhardit: an trockener Luft ausgetrocknet – kreidig weiß und bröselig.' }
+    ],
+    male: (ctx, f, o) => {
+      fuesse(ctx, 40, 60, 90, f);
+
+      // Schlanke Prismen mit schraeg abgeschnittenem Kopf, zum Buendel gewachsen
+      [[-17, 6, -0.16], [17, 4, 0.16], [0, 0, 0]].forEach(([dx, dy, neigung]) => {
+        ctx.save();
+        ctx.translate(50 + dx, 88);
+        ctx.rotate(neigung);
+        const breite = dx ? 12 : 16, hoehe = dx ? 56 : 66;
+        flaeche(ctx, [[-breite / 2, -dy], [0, -dy], [0, -hoehe + 6], [-breite / 2, -hoehe + 12]], f.a);
+        flaeche(ctx, [[0, -dy], [breite / 2, -dy], [breite / 2, -hoehe], [0, -hoehe + 6]], f.b);
+        flaeche(ctx, [[-breite / 2, -hoehe + 12], [0, -hoehe + 6], [breite / 2, -hoehe], [0, -hoehe + 2]], f.hell);
+        umriss(ctx, [[-breite / 2, -dy], [breite / 2, -dy], [breite / 2, -hoehe], [0, -hoehe + 2], [-breite / 2, -hoehe + 12]], f.o, 2);
+        ctx.restore();
+      });
+
+      // Ausgetrocknet: kreidige Flecken und Risse
+      if (f.kreide) {
+        [[38, 50], [58, 40], [47, 72], [64, 66]].forEach(([x, y]) => { oval(ctx, x, y, 4, 3); ctx.fillStyle = 'rgba(255, 255, 255, 0.75)'; ctx.fill(); });
+        linie(ctx, [[44, 36], [48, 44], [45, 50]], f.c, 1);
+        linie(ctx, [[60, 52], [56, 60]], f.c, 1);
+      }
+
+      gesicht(ctx, 50, 62, 0.85, f, o);
+    },
+    spezial: { label: 'Austrocknen', typ: 'zuVariante', ziel: 2, text: 'Zu trocken! An trockener Luft verliert Laumontit Kristallwasser und zerfällt zu kreidigem Leonhardit – Sammler bewahren ihn deshalb feucht oder versiegelt auf.' },
+    wesen: 'Ein Bündel schlanker Prismen mit schrägem Kopf. Ein Zeolith, der Klüfte in Syenit und Basalt füllt – im Plauenschen Grund bei Dresden oft ziegelrot und gern auf Calcit.',
+    pflege: 'Regelmäßig trinken lassen und nicht an die Heizung stellen. Zeolithe lieben es feucht.',
+    fehler: 'Trocknet er aus, wird er zu bröseligem Leonhardit. Das passiert echten Stufen schon in der Vitrine.'
+  },
+  {
     id: 'apophyllit', name: 'Apophyllitchi', mineral: 'Apophyllit', formel: 'KCa₄Si₈O₂₀(F,OH) · 8H₂O', system: 'tetragonal', mohs: '4,5–5',
     schale: ['#eefaf2', '#9adcb0'],
     varianten: [
@@ -2474,6 +2513,7 @@ const FUNDORTE = {
   aragonit: { typ: 'Molina de Aragón (Spanien)', ber: 'Erzberg (Steiermark) für Eisenblüte' },
   prehnit: { typ: 'Kap der Guten Hoffnung (Südafrika)', ber: 'Kayes (Mali), Paterson (New Jersey, USA)' },
   stilbit: { ber: 'Pune (Indien), Berufjörður (Island), Färöer' },
+  laumontit: { typ: 'Huelgoat (Bretagne, Frankreich)', ber: 'Plauenscher Grund bei Dresden (ziegelrot), Pune (Indien)' },
   apophyllit: { ber: 'Pune und Jalgaon (Indien), Sankt Andreasberg (Harz)' },
   smithsonit: { ber: 'Kelly Mine (New Mexico, USA), Tsumeb (Namibia)' },
   hemimorphit: { ber: 'Ojuela Mine bei Mapimí (Mexiko), Wenshan in Yunnan (China) für blauen Hemimorphit' },
@@ -2776,7 +2816,7 @@ const HUELLEN = [
     textRiss: 'Es knackt! Im Riss schimmern Achatbänder.',
     pfad: mandelPfad, rinde: ['#ccd2ba', '#8e9a78', '#5e6a4e'], umriss: '#343c2a',
     schnitt: '#9fb0d8', innen: '#5f76b4', glitzer: '#eef1f8',
-    kinder: ['amethyst', 'quarz', 'opal', 'okenit', 'cavansit', 'stilbit', 'apophyllit', 'prehnit', 'calcit']
+    kinder: ['amethyst', 'quarz', 'opal', 'okenit', 'cavansit', 'stilbit', 'apophyllit', 'prehnit', 'calcit', 'laumontit']
   },
   {
     typ: 'druse', name: 'Erzgang-Stufe',
@@ -3085,7 +3125,7 @@ const FAMILIEN = [
   { key: 'erze', name: 'Erze und Metalle', ids: ['gold', 'silber', 'galenit', 'sphalerit', 'pyrit', 'chalkopyrit', 'magnetit', 'proustit', 'uraninit', 'azurit', 'wulfenit', 'vanadinit', 'pyromorphit', 'smithsonit', 'hemimorphit'] },
   { key: 'mohs', name: 'Mohs-Skala', ids: ['talk', 'gips', 'calcit', 'fluorit', 'apatit', 'orthoklas', 'quarz', 'topas', 'korund', 'diamant'] },
   { key: 'edel', name: 'Edelsteine', ids: ['diamant', 'korund', 'beryll', 'topas', 'turmalin', 'granat', 'zirkon', 'opal', 'amethyst', 'benitoit'] },
-  { key: 'drusen', name: 'Drusenbewohner', ids: ['amethyst', 'okenit', 'cavansit', 'stilbit', 'apophyllit', 'prehnit', 'coelestin'] },
+  { key: 'drusen', name: 'Drusenbewohner', ids: ['amethyst', 'okenit', 'cavansit', 'stilbit', 'apophyllit', 'prehnit', 'coelestin', 'laumontit'] },
   { key: 'uv', name: 'Leuchten unter UV', ids: WESEN.filter(w => w.spezial.typ === 'uv').map(w => w.id).concat(['hackmanit']) },
   { key: 'licht', name: 'Lichtempfindlich', ids: ['vivianit', 'realgar', 'proustit', 'vanadinit', 'amethyst', 'hackmanit'] },
   { key: 'sachsen', name: 'Sachsen', ids: ['torbernit', 'uranocircit', 'erythrin', 'silber', 'galenit', 'uraninit', 'topas', 'wavellit', 'proustit'] }
@@ -3139,6 +3179,7 @@ const PARAGENESEN = [
   { ids: ['cavansit', 'stilbit'], bed: 'heisswasser', lage: 'auf', wirt: 'stilbit', text: 'Blaue Cavansit-Kugeln auf weißem Stilbit – die berühmte Stufe aus Pune.' },
   { ids: ['okenit', 'apophyllit'], bed: 'heisswasser', text: 'Wattebäusche neben klaren Kristallen in indischen Basaltdrusen.' },
   { ids: ['apophyllit', 'stilbit'], bed: 'heisswasser', lage: 'auf', wirt: 'stilbit', text: 'Apophyllit auf pfirsichfarbenem Stilbit, ebenfalls aus Indien.' },
+  { ids: ['laumontit', 'calcit'], bed: 'heisswasser', lage: 'auf', wirt: 'calcit', text: 'Ziegelroter Laumontit auf Calcit – so sitzt er in den Klüften der Syenitbrüche im Plauenschen Grund.' },
   { ids: ['turmalin', 'quarz'], bed: 'schmelze', lage: 'in', wirt: 'quarz', text: 'In Pegmatiten stecken Turmalinsäulen mitten im Quarz.' },
   { ids: ['beryll', 'orthoklas'], bed: 'schmelze', lage: 'auf', wirt: 'orthoklas', text: 'Beryll wächst in Pegmatiten zwischen großen Feldspatkristallen.' },
   { ids: ['topas', 'quarz'], bed: 'schmelze', text: 'Topas und Rauchquarz – wie am Schneckenstein im Vogtland.' },
